@@ -15,7 +15,7 @@ batch_size = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/EuroSAT")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 # define a transform to normalize the data
 transform = transforms.Compose(
@@ -122,7 +122,8 @@ def main():
     )
 
     network = Net().to(device)
-    print(torchinfo.summary(network, input_size=(1, 3, 64, 64)))
+    print(torchinfo.summary(network, input_size=(1, 3, 64, 64), device=device))
+    network = network.to(device)
 
     num_epochs = 4
     optimizer = torch.optim.Adam(network.parameters())
