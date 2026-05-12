@@ -1,10 +1,15 @@
 from pathlib import Path
 
 import torch
-import torchvision
+from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms as transforms
+from torchvision.utils import make_grid
 import torchinfo
 from tqdm import tqdm
+import numpy as np
+import matplotlib.pyplot as plt
+import io
+from sklearn.metrics import confusion_matrix
 
 from Nets import Net
 from Dataset import EuroSATCSVDataset
@@ -13,6 +18,7 @@ NUM_EPOCHS = 10
 BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/EuroSAT")
+NET_CLASS = Net
 
 CLASSES = ('AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industrial',
            'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake')
@@ -27,7 +33,7 @@ device = torch.device(
 def main():
     train_dataloader, val_dataloader, test_dataloader = get_data_loaders()
 
-    network = Net().to(device)
+    network = NET_CLASS().to(device)
     torchinfo.summary(network, input_size=(1, 3, 64, 64), device=device)
 
     train_and_validate(train_dataloader, val_dataloader, network)
@@ -91,8 +97,11 @@ def get_data_loaders():
 
 # Training function to train the model and validate after each epoch
 def train_and_validate(train_dataloader, val_dataloader, network):
+    writer = SummaryWriter(f"runs/{NET_CLASS.__name__}")
     optimizer = torch.optim.Adam(network.parameters())
     loss_function = torch.nn.CrossEntropyLoss()
+
+    log_sample_images(writer, train_dataloader)
 
     for epoch in range(NUM_EPOCHS):
         network.train()
@@ -112,15 +121,41 @@ def train_and_validate(train_dataloader, val_dataloader, network):
 
         epoch_loss = running_loss / len(train_dataloader)
 
-        val_epoch_loss, val_accuracy = validate(
+        val_epoch_loss, val_accuracy, all_targets, all_preds = validate(
             val_dataloader, network, loss_function)
+
+        writer.add_scalar("Loss/train", epoch_loss, epoch)
+        writer.add_scalar("Loss/val", val_epoch_loss, epoch)
+        writer.add_scalar("Accuracy/val", val_accuracy, epoch)
+
+        log_confusion_matrix(writer, all_targets, all_preds, epoch)
 
         print(
             f"Epoch {epoch + 1}/{NUM_EPOCHS} | Train Loss: {epoch_loss:.4f} | "
             f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
         )
-
+    writer.close()
     print('Finished Training')
+
+
+def log_sample_images(writer, train_dataloader):
+    images, labels = next(iter(train_dataloader))
+    images = images[:16].clone()
+    labels = labels[:16]
+
+    images = images * 0.5 + 0.5
+    images = images.clamp(0.0, 1.0)
+
+    grid = make_grid(images, nrow=4)
+    writer.add_image("Samples/train_images", grid)
+    writer.add_text(
+        "Samples/train_labels",
+        ", ".join(CLASSES[label.item()] for label in labels),
+    )
+    try:
+        writer.flush()
+    except Exception:
+        pass
 
 
 # Validation function to evaluate the model on the validation set
@@ -129,6 +164,8 @@ def validate(val_dataloader, network, loss_function):
     val_running_loss = 0.0
     correct_predictions = 0
     total_predictions = 0
+    all_targets = []
+    all_preds = []
 
     with torch.no_grad():
         for inputs, labels in tqdm(val_dataloader, desc="Validation"):
@@ -140,12 +177,49 @@ def validate(val_dataloader, network, loss_function):
             val_running_loss += val_loss.item()
 
             predictions = torch.argmax(outputs, dim=1)
+
             total_predictions += labels.size(0)
             correct_predictions += (predictions == labels).sum().item()
 
+            all_targets.extend(labels.cpu().tolist())
+            all_preds.extend(predictions.cpu().tolist())
+
     val_epoch_loss = val_running_loss / len(val_dataloader)
     val_accuracy = 100.0 * correct_predictions / total_predictions
-    return val_epoch_loss, val_accuracy
+    return val_epoch_loss, val_accuracy, all_targets, all_preds
+
+
+def plot_confusion_matrix(cm, class_names):
+    fig, ax = plt.subplots(figsize=(8, 8))
+    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    ax.set_title('Confusion matrix')
+    fig.colorbar(im, ax=ax)
+    tick_marks = np.arange(len(class_names))
+    ax.set_xticks(tick_marks)
+    ax.set_yticks(tick_marks)
+    ax.set_xticklabels(class_names, rotation=45, ha='right')
+    ax.set_yticklabels(class_names)
+
+    thresh = cm.max() / 2.
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, format(cm[i, j], 'd'),
+                    ha='center', va='center',
+                    color='white' if cm[i, j] > thresh else 'black')
+    plt.tight_layout()
+    return fig
+
+
+def log_confusion_matrix(writer, targets, preds, epoch):
+    cm = confusion_matrix(targets, preds)
+    fig = plot_confusion_matrix(cm, CLASSES)
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    import PIL.Image as PILImage
+    im = PILImage.open(buf).convert('RGB')
+    im = np.array(im).transpose(2, 0, 1)
+    writer.add_image('ConfusionMatrix', im, epoch)
 
 
 # Test function to evaluate the model on the test set
