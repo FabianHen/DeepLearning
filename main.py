@@ -1,139 +1,98 @@
-import os
-import csv
 from pathlib import Path
-
-import numpy as np
-from PIL import Image
 
 import torch
 import torchvision
 import torchvision.transforms as transforms
 import torchinfo
-import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-batch_size = 64
-NUM_WORKERS = 4
+from Nets import Net
+from Dataset import EuroSATCSVDataset
+
+NUM_EPOCHS = 10
+BATCH_SIZE = 64
+NUM_WORKERS = 8
 DATA_ROOT = Path("images/EuroSAT")
 
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-
-# define a transform to normalize the data
-transform = transforms.Compose(
-    [transforms.ToTensor(),  # convert to tensor & scale to [0,1]
-     # for each channel
-     transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))])
-
-
-class EuroSATCSVDataset(torch.utils.data.Dataset):
-    def __init__(self, csv_path: Path, image_root: Path, transform=None):
-        self.image_root = image_root
-        self.transform = transform
-        self.samples = []
-
-        with csv_path.open(newline="", encoding="utf-8") as file_handle:
-            reader = csv.DictReader(file_handle)
-            for row in reader:
-                filename = row.get("Filename", "").strip()
-                label = row.get("Label", "").strip()
-                if not filename or not label:
-                    continue
-                self.samples.append((filename, int(label)))
-
-    def __len__(self):
-        return len(self.samples)
-
-    def __getitem__(self, index):
-        relative_path, label = self.samples[index]
-        image_path = self.image_root / relative_path
-        image = Image.open(image_path).convert("RGB")
-
-        if self.transform is not None:
-            image = self.transform(image)
-
-        return image, label
-
-
-trainset = EuroSATCSVDataset(
-    DATA_ROOT / "train.csv", DATA_ROOT, transform=transform)
-valset = EuroSATCSVDataset(
-    DATA_ROOT / "validation.csv", DATA_ROOT, transform=transform)
-testset = EuroSATCSVDataset(DATA_ROOT / "test.csv",
-                            DATA_ROOT, transform=transform)
-
-classes = ('AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industrial',
+CLASSES = ('AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industrial',
            'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake')
 
-NUM_CLASSES = 10
-
-
-class Net(torch.nn.Module):
-    # define layer
-    def __init__(self):
-        super().__init__()
-        self.conv1 = torch.nn.Conv2d(
-            in_channels=3, out_channels=32, kernel_size=3, padding=1)
-        self.conv2 = torch.nn.Conv2d(
-            in_channels=32, out_channels=16, kernel_size=3, padding=1)
-        self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
-        # Linear -> fully connected
-        self.fc1 = torch.nn.Linear(16*16*16, 128)
-        # self.fc2 = torch.nn.Linear(120, 84)
-        self.fc2 = torch.nn.Linear(128, NUM_CLASSES)  # 10 classes
-
-    # define data flow / architecture
-    def forward(self, x):
-        x = torch.nn.functional.relu(self.conv1(x))  # output=32 * 32*32
-        x = self.pool(x)                            # output=32 * 16*16
-        x = torch.nn.functional.relu(self.conv2(x))  # output=16 * 16*16
-        x = self.pool(x)                            # output=16 *  8* 8
-        x = torch.flatten(x, 1)  # flatten all dimensions except batch
-        x = torch.nn.functional.relu(self.fc1(x))
-        # x = torch.nn.functional.relu(self.fc2(x))
-        x = self.fc2(x)
-        return x
+device = torch.device(
+    "cuda" if torch.cuda.is_available() else
+    "mps" if torch.backends.mps.is_available() else
+    "cpu"
+)
 
 
 def main():
-    print("cuda available: ", torch.cuda.is_available())
-    print("#gpus: ", torch.cuda.device_count())
-    print("#threads: ", torch.get_num_threads())
-    print(device)
+    train_dataloader, val_dataloader, test_dataloader = get_data_loaders()
 
+    network = Net().to(device)
+    torchinfo.summary(network, input_size=(1, 3, 64, 64), device=device)
+
+    train_and_validate(train_dataloader, val_dataloader, network)
+    test(test_dataloader, network)
+
+
+# Function to create dataloaders for training, validation, and testing
+def get_data_loaders():
+    # Define transformations for training and evaluation
+    train_transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        transforms.RandomRotation(20),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+    ])
+
+    eval_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+    ])
+
+    # Create datasets
+    trainset = EuroSATCSVDataset(
+        DATA_ROOT / "train.csv", DATA_ROOT, transform=train_transform)
+    valset = EuroSATCSVDataset(
+        DATA_ROOT / "validation.csv", DATA_ROOT, transform=eval_transform)
+    testset = EuroSATCSVDataset(DATA_ROOT / "test.csv",
+                                DATA_ROOT, transform=eval_transform)
+
+    # Create dataloaders
     train_dataloader = torch.utils.data.DataLoader(
         trainset,
-        batch_size=batch_size,
+        batch_size=BATCH_SIZE,
         shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=torch.cuda.is_available(),
     )
     val_dataloader = torch.utils.data.DataLoader(
         valset,
-        batch_size=batch_size,
+        batch_size=BATCH_SIZE,
         shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=torch.cuda.is_available(),
     )
     test_dataloader = torch.utils.data.DataLoader(
         testset,
-        batch_size=batch_size,
+        batch_size=BATCH_SIZE,
         shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=torch.cuda.is_available(),
     )
+    return train_dataloader, val_dataloader, test_dataloader
 
-    network = Net().to(device)
-    print(torchinfo.summary(network, input_size=(1, 3, 64, 64), device=device))
-    network = network.to(device)
 
-    num_epochs = 4
+# Training function to train the model and validate after each epoch
+def train_and_validate(train_dataloader, val_dataloader, network):
     optimizer = torch.optim.Adam(network.parameters())
     loss_function = torch.nn.CrossEntropyLoss()
 
-    for epoch in range(num_epochs):
+    for epoch in range(NUM_EPOCHS):
         network.train()
         running_loss = 0.0
 
-        for inputs, labels in train_dataloader:
+        for inputs, labels in tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{NUM_EPOCHS} Training"):
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -147,45 +106,51 @@ def main():
 
         epoch_loss = running_loss / len(train_dataloader)
 
-        network.eval()
-        val_running_loss = 0.0
-        correct_predictions = 0
-        total_predictions = 0
-
-        with torch.no_grad():
-            for inputs, labels in val_dataloader:
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-
-                outputs = network(inputs)
-                val_loss = loss_function(outputs, labels)
-                val_running_loss += val_loss.item()
-
-                predictions = torch.argmax(outputs, dim=1)
-                total_predictions += labels.size(0)
-                correct_predictions += (predictions == labels).sum().item()
-
-        val_epoch_loss = val_running_loss / len(val_dataloader)
-        val_accuracy = 100.0 * correct_predictions / total_predictions
+        val_epoch_loss, val_accuracy = validate(
+            val_dataloader, network, loss_function)
 
         print(
-            f"Epoch {epoch + 1}/{num_epochs} | Train Loss: {epoch_loss:.4f} | "
+            f"Epoch {epoch + 1}/{NUM_EPOCHS} | Train Loss: {epoch_loss:.4f} | "
             f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
         )
 
     print('Finished Training')
-    network.eval()
 
+
+# Validation function to evaluate the model on the validation set
+def validate(val_dataloader, network, loss_function):
+    network.eval()
+    val_running_loss = 0.0
+    correct_predictions = 0
+    total_predictions = 0
+
+    with torch.no_grad():
+        for inputs, labels in tqdm(val_dataloader, desc="Validation"):
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            outputs = network(inputs)
+            val_loss = loss_function(outputs, labels)
+            val_running_loss += val_loss.item()
+
+            predictions = torch.argmax(outputs, dim=1)
+            total_predictions += labels.size(0)
+            correct_predictions += (predictions == labels).sum().item()
+
+    val_epoch_loss = val_running_loss / len(val_dataloader)
+    val_accuracy = 100.0 * correct_predictions / total_predictions
+    return val_epoch_loss, val_accuracy
+
+
+# Test function to evaluate the model on the test set
+def test(test_dataloader, network):
+    network.eval()
     correct = 0
     total = 0
-    # since we're not training, we don't need to calculate the gradients for our outputs
     with torch.no_grad():
-        for data in test_dataloader:
+        for data in tqdm(test_dataloader, desc="Testing"):
             inputs, labels = data[0].to(device), data[1].to(device)
-            # inputs, labels = data
-            # calculate outputs by running images through the network
             outputs = network(inputs)
-            # the class with the highest energy is what we choose as prediction
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
