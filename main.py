@@ -11,7 +11,7 @@ from Dataset import EuroSATCSVDataset
 
 NUM_EPOCHS = 10
 BATCH_SIZE = 64
-NUM_WORKERS = 8
+NUM_WORKERS = 4
 DATA_ROOT = Path("images/EuroSAT")
 
 CLASSES = ('AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industrial',
@@ -65,6 +65,8 @@ def get_data_loaders():
         shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=torch.cuda.is_available(),
+        prefetch_factor=2,
+        persistent_workers=True,
     )
     val_dataloader = torch.utils.data.DataLoader(
         valset,
@@ -72,6 +74,8 @@ def get_data_loaders():
         shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=torch.cuda.is_available(),
+        prefetch_factor=2,
+        persistent_workers=True,
     )
     test_dataloader = torch.utils.data.DataLoader(
         testset,
@@ -79,6 +83,8 @@ def get_data_loaders():
         shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=torch.cuda.is_available(),
+        prefetch_factor=2,
+        persistent_workers=True,
     )
     return train_dataloader, val_dataloader, test_dataloader
 

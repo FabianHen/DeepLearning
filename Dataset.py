@@ -12,6 +12,7 @@ class EuroSATCSVDataset(torch.utils.data.Dataset):
         self.image_root = image_root
         self.transform = transform
         self.samples = []
+        self.image_cache = {}  # Cache for images in RAM
 
         with csv_path.open(newline="", encoding="utf-8") as file_handle:
             reader = csv.DictReader(file_handle)
@@ -22,13 +23,22 @@ class EuroSATCSVDataset(torch.utils.data.Dataset):
                     continue
                 self.samples.append((filename, int(label)))
 
+        # Preload all images into RAM cache
+        print(f"Preloading {len(self.samples)} images into cache...")
+        for idx, (relative_path, label) in enumerate(self.samples):
+            image_path = self.image_root / relative_path
+            image = Image.open(image_path).convert("RGB")
+            self.image_cache[idx] = image
+        print("Image cache ready!")
+
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, index):
-        relative_path, label = self.samples[index]
-        image_path = self.image_root / relative_path
-        image = Image.open(image_path).convert("RGB")
+        # Get image from cache instead of loading from disk
+        # Copy to avoid modifying cached image
+        image = self.image_cache[index].copy()
+        _, label = self.samples[index]
 
         if self.transform is not None:
             image = self.transform(image)
