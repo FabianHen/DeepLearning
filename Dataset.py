@@ -1,44 +1,115 @@
 import csv
+import random
 from pathlib import Path
 from PIL import Image
 import torch
 
 
-DATA_ROOT = Path("images/EuroSAT")
+IMAGE_EXTENSIONS = {".jpg"}
 
 
-class EuroSATCSVDataset(torch.utils.data.Dataset):
-    def __init__(self, csv_path: Path, image_root: Path, transform=None):
-        self.image_root = image_root
+class ImageFolderDataset(torch.utils.data.Dataset):
+    def __init__(self, image_root: Path, transform=None, samples=None, class_to_idx=None):
+        self.image_root = Path(image_root)
         self.transform = transform
-        self.samples = []
-        self.image_cache = {}  # Cache for images in RAM
 
-        with csv_path.open(newline="", encoding="utf-8") as file_handle:
-            reader = csv.DictReader(file_handle)
-            for row in reader:
-                filename = row.get("Filename", "").strip()
-                label = row.get("Label", "").strip()
-                if not filename or not label:
-                    continue
-                self.samples.append((filename, int(label)))
+        if class_to_idx is None:
+            class_names = [
+                entry.name for entry in sorted(self.image_root.iterdir())
+                if entry.is_dir()
+            ]
+            self.class_to_idx = {class_name: index for index,
+                                 class_name in enumerate(class_names)}
+        else:
+            self.class_to_idx = dict(class_to_idx)
 
-        # Preload all images into RAM cache
-        print(f"Preloading {len(self.samples)} images into cache...")
-        for idx, (relative_path, label) in enumerate(self.samples):
-            image_path = self.image_root / relative_path
-            image = Image.open(image_path).convert("RGB")
-            self.image_cache[idx] = image
-        print("Image cache ready!")
+        self.samples = samples if samples is not None else self._scan_samples()
+
+    def _scan_samples(self):
+        samples = []
+        for class_name, class_index in self.class_to_idx.items():
+            class_dir = self.image_root / class_name
+            if not class_dir.exists():
+                continue
+
+            for image_path in sorted(class_dir.rglob("*")):
+                if image_path.is_file() and image_path.suffix.lower() in IMAGE_EXTENSIONS:
+                    samples.append((image_path, class_index))
+
+        if not samples:
+            raise ValueError(f"No images found in {self.image_root}")
+
+        return samples
+
+    def subset(self, indices, transform=None):
+        subset_samples = [self.samples[index] for index in indices]
+        return ImageFolderDataset(
+            self.image_root,
+            transform=self.transform if transform is None else transform,
+            samples=subset_samples,
+            class_to_idx=self.class_to_idx,
+        )
+
+    def stratified_split(
+        self,
+        train_ratio,
+        val_ratio,
+        test_ratio,
+        seed=42,
+        train_transform=None,
+        val_transform=None,
+        test_transform=None,
+    ):
+        if not torch.isclose(
+            torch.tensor(train_ratio + val_ratio +
+                         test_ratio, dtype=torch.float32),
+            torch.tensor(1.0, dtype=torch.float32),
+        ):
+            raise ValueError(
+                "train_ratio + val_ratio + test_ratio must equal 1.0")
+
+        rng = random.Random(seed)
+        train_samples = []
+        val_samples = []
+        test_samples = []
+
+        samples_by_class = {}
+        for sample in self.samples:
+            image_path, label = sample
+            samples_by_class.setdefault(label, []).append(sample)
+
+        for class_label, class_samples in samples_by_class.items():
+            rng.shuffle(class_samples)
+            total = len(class_samples)
+            train_count = int(total * train_ratio)
+            val_count = int(total * val_ratio)
+            test_count = total - train_count - val_count
+
+            train_samples.extend(class_samples[:train_count])
+            val_samples.extend(
+                class_samples[train_count:train_count + val_count])
+            test_samples.extend(
+                class_samples[train_count + val_count:train_count + val_count + test_count])
+
+        rng.shuffle(train_samples)
+        rng.shuffle(val_samples)
+        rng.shuffle(test_samples)
+
+        return (
+            ImageFolderDataset(self.image_root, transform=train_transform if train_transform is not None else self.transform,
+                               samples=train_samples, class_to_idx=self.class_to_idx),
+            ImageFolderDataset(self.image_root, transform=val_transform if val_transform is not None else self.transform,
+                               samples=val_samples, class_to_idx=self.class_to_idx),
+            ImageFolderDataset(self.image_root, transform=test_transform if test_transform is not None else self.transform,
+                               samples=test_samples, class_to_idx=self.class_to_idx),
+        )
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, index):
-        # Get image from cache instead of loading from disk
-        # Copy to avoid modifying cached image
-        image = self.image_cache[index].copy()
-        _, label = self.samples[index]
+        image_path, label = self.samples[index]
+        image = Image.open(image_path).convert("RGB")
 
         if self.transform is not None:
             image = self.transform(image)

@@ -12,16 +12,58 @@ import io
 from sklearn.metrics import confusion_matrix
 
 from Nets import Base_Net
-from Dataset import EuroSATCSVDataset
+from Dataset import ImageFolderDataset
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 25
 BATCH_SIZE = 64
 NUM_WORKERS = 4
-DATA_ROOT = Path("images/EuroSAT")
+DATA_ROOT = Path("images/PatternNet_Images")
 NET_CLASS = Base_Net
+TRAIN_RATIO = 0.7
+VAL_RATIO = 0.15
+TEST_RATIO = 0.15
+SPLIT_SEED = 42
 
-CLASSES = ('AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industrial',
-           'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake')
+CLASSES = (
+    'airplane',
+    'baseball_field',
+    'basketball_court',
+    'beach',
+    'bridge',
+    'cemetery',
+    'chaparral',
+    'christmas_tree_farm',
+    'closed_road',
+    'coastal_mansion',
+    'crosswalk',
+    'dense_residential',
+    'ferry_terminal',
+    'football_field',
+    'forest',
+    'freeway',
+    'golf_course',
+    'harbor',
+    'intersection',
+    'mobile_home_park',
+    'nursing_home',
+    'oil_gas_field',
+    'oil_well',
+    'overpass',
+    'parking_lot',
+    'parking_space',
+    'railway',
+    'river',
+    'runway',
+    'runway_marking',
+    'shipping_yard',
+    'solar_panel',
+    'sparse_residential',
+    'storage_tank',
+    'swimming_pool',
+    'tennis_court',
+    'transformer_station',
+    'wastewater_treatment_plant',
+)
 
 device = torch.device(
     "cuda" if torch.cuda.is_available() else
@@ -34,7 +76,7 @@ def main():
     train_dataloader, val_dataloader, test_dataloader = get_data_loaders()
 
     network = NET_CLASS().to(device)
-    torchinfo.summary(network, input_size=(1, 3, 64, 64), device=device)
+    torchinfo.summary(network, input_size=(1, 3, 256, 256), device=device)
 
     train_and_validate(train_dataloader, val_dataloader, network)
     test(test_dataloader, network)
@@ -56,13 +98,17 @@ def get_data_loaders():
         transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
     ])
 
-    # Create datasets
-    trainset = EuroSATCSVDataset(
-        DATA_ROOT / "train.csv", DATA_ROOT, transform=train_transform)
-    valset = EuroSATCSVDataset(
-        DATA_ROOT / "validation.csv", DATA_ROOT, transform=eval_transform)
-    testset = EuroSATCSVDataset(DATA_ROOT / "test.csv",
-                                DATA_ROOT, transform=eval_transform)
+    # Create base dataset and split it deterministically per class
+    full_dataset = ImageFolderDataset(DATA_ROOT)
+    trainset, valset, testset = full_dataset.stratified_split(
+        TRAIN_RATIO,
+        VAL_RATIO,
+        TEST_RATIO,
+        seed=SPLIT_SEED,
+        train_transform=train_transform,
+        val_transform=eval_transform,
+        test_transform=eval_transform,
+    )
 
     # Create dataloaders
     train_dataloader = torch.utils.data.DataLoader(
@@ -190,7 +236,7 @@ def validate(val_dataloader, network, loss_function):
 
 
 def plot_confusion_matrix(cm, class_names):
-    fig, ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(32, 32))
     im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     ax.set_title('Confusion matrix')
     fig.colorbar(im, ax=ax)

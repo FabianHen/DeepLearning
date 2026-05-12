@@ -1,6 +1,6 @@
 import torch
 
-NUM_CLASSES = 10
+NUM_CLASSES = 38
 
 
 class Base_Net(torch.nn.Module):
@@ -19,10 +19,10 @@ class Base_Net(torch.nn.Module):
             in_channels=32, out_channels=16, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
         # Linear -> fully connected
-        self.fc1 = torch.nn.Linear(16*16*16, 128)
+        self.fc1 = torch.nn.Linear(16*64*64, 128)
         self.fc2 = torch.nn.Linear(128, 128)
         # self.fc2 = torch.nn.Linear(120, 84)
-        self.fc3 = torch.nn.Linear(128, NUM_CLASSES)  # 10 classes
+        self.fc3 = torch.nn.Linear(128, NUM_CLASSES)
 
     # define data flow / architecture
     def forward(self, x):
