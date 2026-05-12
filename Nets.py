@@ -1,12 +1,9 @@
 import torch
-import torchvision
-import torchvision.transforms as transforms
-import torchinfo
 
 NUM_CLASSES = 10
 
 
-class Net(torch.nn.Module):
+class Base_Net(torch.nn.Module):
     # define layer
     def __init__(self):
         super().__init__()

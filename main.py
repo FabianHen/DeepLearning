@@ -11,14 +11,14 @@ import matplotlib.pyplot as plt
 import io
 from sklearn.metrics import confusion_matrix
 
-from Nets import Net
+from Nets import Base_Net
 from Dataset import EuroSATCSVDataset
 
 NUM_EPOCHS = 10
 BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/EuroSAT")
-NET_CLASS = Net
+NET_CLASS = Base_Net
 
 CLASSES = ('AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industrial',
            'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake')
