@@ -14,7 +14,7 @@ from sklearn.metrics import confusion_matrix
 from Nets import Base_Net
 from Dataset import ImageFolderDataset
 
-NUM_EPOCHS = 25
+NUM_EPOCHS = 15
 BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/PatternNet_Images")
@@ -82,6 +82,41 @@ def main():
     test(test_dataloader, network)
 
 
+def _dataset_paths(dataset):
+    return {str(path.resolve()) for path, _ in dataset.samples}
+
+
+def _label_counts(dataset):
+    counts = np.zeros(len(CLASSES), dtype=int)
+    for _, label in dataset.samples:
+        counts[label] += 1
+    return counts
+
+
+def validate_split_integrity(trainset, valset, testset):
+    train_paths = _dataset_paths(trainset)
+    val_paths = _dataset_paths(valset)
+    test_paths = _dataset_paths(testset)
+
+    overlap_train_val = train_paths & val_paths
+    overlap_train_test = train_paths & test_paths
+    overlap_val_test = val_paths & test_paths
+
+    if overlap_train_val or overlap_train_test or overlap_val_test:
+        raise ValueError(
+            "Data leakage detected: train/val/test contain overlapping file paths."
+        )
+
+    print("Split integrity check passed: no overlapping file paths across train/val/test.")
+
+    for split_name, dataset in (("train", trainset), ("val", valset), ("test", testset)):
+        counts = _label_counts(dataset)
+        print(
+            f"{split_name} split size: {len(dataset)} | "
+            f"min/class: {counts.min()} | max/class: {counts.max()}"
+        )
+
+
 # Function to create dataloaders for training, validation, and testing
 def get_data_loaders():
     # Define transformations for training and evaluation
@@ -109,6 +144,8 @@ def get_data_loaders():
         val_transform=eval_transform,
         test_transform=eval_transform,
     )
+
+    validate_split_integrity(trainset, valset, testset)
 
     # Create dataloaders
     train_dataloader = torch.utils.data.DataLoader(
@@ -281,8 +318,8 @@ def test(test_dataloader, network):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-    print(
-        f'Accuracy of the network on the test images: {100 * correct // total} %')
+    test_accuracy = 100.0 * correct / total
+    print(f"Accuracy of the network on the test images: {test_accuracy:.2f}%")
 
 
 if __name__ == "__main__":

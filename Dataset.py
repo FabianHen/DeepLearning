@@ -6,6 +6,8 @@ import torch
 
 
 IMAGE_EXTENSIONS = {".jpg"}
+SAMPLES_PER_CLASS = 100
+SAMPLE_SELECTION_SEED = 42
 
 
 class ImageFolderDataset(torch.utils.data.Dataset):
@@ -32,9 +34,19 @@ class ImageFolderDataset(torch.utils.data.Dataset):
             if not class_dir.exists():
                 continue
 
+            class_samples = []
             for image_path in sorted(class_dir.rglob("*")):
                 if image_path.is_file() and image_path.suffix.lower() in IMAGE_EXTENSIONS:
-                    samples.append((image_path, class_index))
+                    class_samples.append((image_path, class_index))
+
+            # Limit samples per class if specified
+            if SAMPLES_PER_CLASS is not None and len(class_samples) > SAMPLES_PER_CLASS:
+                # Reproducible random subset to avoid bias from lexicographic first-N sampling.
+                class_rng = random.Random(SAMPLE_SELECTION_SEED + class_index)
+                class_samples = class_rng.sample(class_samples, SAMPLES_PER_CLASS)
+                class_samples.sort(key=lambda item: str(item[0]))
+
+            samples.extend(class_samples)
 
         if not samples:
             raise ValueError(f"No images found in {self.image_root}")
