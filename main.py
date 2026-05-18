@@ -11,14 +11,14 @@ import matplotlib.pyplot as plt
 import io
 from sklearn.metrics import confusion_matrix
 
-from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, Best_Net, BestConv_Net, BestConvDropout_Net, BestFeatureMaps_Net
+from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net, BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net, Dropout_Net, BatchNorm_Net
 from Dataset import ImageFolderDataset
 
 NUM_EPOCHS = 15
 BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/PatternNet_Images")
-NET_CLASS = BestFeatureMaps_Net
+NET_CLASS = BatchNorm_Dense_Pool_Conv_Dropout_V2_Net
 TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
@@ -121,6 +121,7 @@ def validate_split_integrity(trainset, valset, testset):
 def get_data_loaders():
     # Define transformations for training and evaluation
     train_transform = transforms.Compose([
+        transforms.RandomResizedCrop(256, scale=(0.8, 1.0)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomRotation(20),
@@ -323,4 +324,9 @@ def test(test_dataloader, network):
 
 
 if __name__ == "__main__":
-    main()
+    classes = [Base_Net, Dense_Net, Conv_Net, Pooling_Net, Dropout_Net, BatchNorm_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net,
+               BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net]
+    for cls in classes:
+        print(f"Testing {cls.__name__}...")
+        NET_CLASS = cls
+        main()

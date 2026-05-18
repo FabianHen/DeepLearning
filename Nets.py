@@ -174,7 +174,8 @@ class Pooling_Net(torch.nn.Module):
         x = torch.nn.functional.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-    
+
+
 class Dropout_Net(torch.nn.Module):
     # define layer
     def __init__(self):
@@ -190,9 +191,10 @@ class Dropout_Net(torch.nn.Module):
         self.conv5 = torch.nn.Conv2d(
             in_channels=32, out_channels=16, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
-        
-        self.dropout = torch.nn.Dropout(p=0.5)  # Dropout layer with 50% dropout rate
-        
+
+        # Dropout layer with 50% dropout rate
+        self.dropout = torch.nn.Dropout(p=0.5)
+
         # Linear -> fully connected
         self.fc1 = torch.nn.Linear(16*64*64, 128)
         self.fc2 = torch.nn.Linear(128, 128)
@@ -215,7 +217,8 @@ class Dropout_Net(torch.nn.Module):
         x = torch.nn.functional.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-    
+
+
 class BatchNorm_Net(torch.nn.Module):
     # define layer
     def __init__(self):
@@ -231,7 +234,7 @@ class BatchNorm_Net(torch.nn.Module):
         self.conv5 = torch.nn.Conv2d(
             in_channels=32, out_channels=16, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
-        
+
         self.bn1 = torch.nn.BatchNorm2d(32)
         self.bn2 = torch.nn.BatchNorm2d(32)
         self.bn3 = torch.nn.BatchNorm2d(32)
@@ -260,8 +263,9 @@ class BatchNorm_Net(torch.nn.Module):
         x = torch.nn.functional.relu(self.bn_fc2(self.fc2(x)))
         x = self.fc3(x)
         return x
-    
-class Best_Net(torch.nn.Module):
+
+
+class BatchNorm_Dense_Pool_Net(torch.nn.Module):
     # define layer
     def __init__(self):
         super().__init__()
@@ -276,7 +280,7 @@ class Best_Net(torch.nn.Module):
         self.conv5 = torch.nn.Conv2d(
             in_channels=32, out_channels=16, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
-        
+
         self.bn1 = torch.nn.BatchNorm2d(32)
         self.bn2 = torch.nn.BatchNorm2d(32)
         self.bn3 = torch.nn.BatchNorm2d(32)
@@ -305,12 +309,13 @@ class Best_Net(torch.nn.Module):
 
         x = torch.flatten(x, 1)  # flatten all dimensions except batch
         x = torch.nn.functional.relu(self.bn_fc1(self.fc1(x)))
-        x = torch.nn.functional.relu(self.bn_fc2(self.fc2(x))) 
+        x = torch.nn.functional.relu(self.bn_fc2(self.fc2(x)))
         x = torch.nn.functional.relu(self.bn_fc3(self.fc3(x)))
         x = self.fc4(x)
         return x
 
-class BestConvDropout_Net(torch.nn.Module):
+
+class BatchNorm_Dense_Pool_Conv_Net(torch.nn.Module):
     # define layer
     def __init__(self):
         super().__init__()
@@ -327,7 +332,7 @@ class BestConvDropout_Net(torch.nn.Module):
         self.conv6 = torch.nn.Conv2d(
             in_channels=32, out_channels=16, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
-        
+
         self.bn1 = torch.nn.BatchNorm2d(32)
         self.bn2 = torch.nn.BatchNorm2d(32)
         self.bn3 = torch.nn.BatchNorm2d(32)
@@ -358,12 +363,13 @@ class BestConvDropout_Net(torch.nn.Module):
 
         x = torch.flatten(x, 1)  # flatten all dimensions except batch
         x = torch.nn.functional.relu(self.bn_fc1(self.fc1(x)))
-        x = torch.nn.functional.relu(self.bn_fc2(self.fc2(x))) 
+        x = torch.nn.functional.relu(self.bn_fc2(self.fc2(x)))
         x = torch.nn.functional.relu(self.bn_fc3(self.fc3(x)))
         x = self.fc4(x)
         return x
-    
-class BestConv_Net(torch.nn.Module):
+
+
+class BatchNorm_Dense_Pool_Conv_Dropout_Net(torch.nn.Module):
     # define layer
     def __init__(self):
         super().__init__()
@@ -380,7 +386,7 @@ class BestConv_Net(torch.nn.Module):
         self.conv6 = torch.nn.Conv2d(
             in_channels=32, out_channels=16, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
-        
+
         self.bn1 = torch.nn.BatchNorm2d(32)
         self.bn2 = torch.nn.BatchNorm2d(32)
         self.bn3 = torch.nn.BatchNorm2d(32)
@@ -418,8 +424,9 @@ class BestConv_Net(torch.nn.Module):
         x = torch.nn.functional.relu(self.bn_fc3(self.fc3(x)))
         x = self.fc4(x)
         return x
-    
-class BestFeatureMaps_Net(torch.nn.Module):
+
+
+class BatchNorm_Dense_Pool_Conv_Dropout_V2_Net(torch.nn.Module):
     # define layer
     def __init__(self):
         super().__init__()
@@ -436,7 +443,7 @@ class BestFeatureMaps_Net(torch.nn.Module):
         self.conv6 = torch.nn.Conv2d(
             in_channels=64, out_channels=32, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
-        
+
         self.bn1 = torch.nn.BatchNorm2d(64)
         self.bn2 = torch.nn.BatchNorm2d(64)
         self.bn3 = torch.nn.BatchNorm2d(64)
