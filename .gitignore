@@ -220,3 +220,14 @@ __marimo__/
 images/
 .DS_Store
 runs/
+
+*.aux
+*.bak
+*.bbl
+*.blg
+*.brf
+*.out
+*.fls
+*.synctex.gz
+*.fdb_latexmk
+*.pdf
