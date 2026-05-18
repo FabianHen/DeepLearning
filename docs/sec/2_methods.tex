@@ -1,3 +1,137 @@
 \section{Eigene Methoden}
-Eigene Methoden
-\cite{Alpher05}
+\label{sec:methode}
+
+% --- 2.1 Datensatz ---
+\subsection{Datensatz}
+\label{subsec:datensatz}
+
+Grundlage der Experimente ist der PatternNet-Datensatz, der speziell für die Evaluation von Verfahren zur Fernerkundungsbildklassifikation und -suche erstellt wurde~\cite{zhou2018patternnet}.
+Der Datensatz enthält 30\,400 RGB-Bilder mit einer einheitlichen Bildgröße von $256 \times 256$\,Pixel.
+Die Bilder wurden über Google Earth und Google Maps gesammelt und repräsentieren eine Vielzahl von Szenen aus den USA, darunter städtische, ländliche, industrielle und natürliche Umgebungen.
+Die Bilder verteilen sich gleichmäßig auf 38 Szenenklassen, wie beispielsweise \textit{airplane}, \textit{bridge}, \textit{forest}, \textit{dense\_residential} und \textit{swimming\_pool}, mit jeweils 800 Bildern pro Klasse.
+Die Gleichverteilung der Klassen ist ein Vorteil gegenüber vielen anderen Datensätzen, da keine gesonderte Behandlung von Klassenungleichgewichten erforderlich ist.
+
+Die Aufteilung des Datensatzes in Trainings-, Validierungs- und Testmenge erfolgte stratifiziert, sodass die Klassenverteilung in allen Teilmengen erhalten bleibt.
+Es wurde eine Aufteilung von 70\,\% Training, 15\,\% Validierung und 15\,\% Test gewählt.
+
+% --- 2.2 Vorverarbeitung und Augmentation ---
+\subsection{Vorverarbeitung und Datenaugmentation}
+\label{subsec:augmentation}
+
+Zu Beginn wurde die Anzahl der Bilder pro Klasse auf 100 reduziert, um die Ergebnisse gezielt zu verschlechtern, da die Trainingsergebnisse mit der vollen Anzahl von 800 Bildern pro Klasse bereits sehr gut waren.
+Diese künstliche Verknappung der Trainingsdaten führte zu einer deutlichen Verschlechterung der Modellleistung, was die Notwendigkeit vom Einsatz von verschiedenen Techniken zur Verbesserung der Generalisierungsfähigkeit unterstreicht.
+Dadurch konnten die Auswirkungen von Augmentationstechniken und Architekturänderungen auf die Leistung besser analysiert werden.
+
+Um die Generalisierungsfähigkeit des Modells zu verbessern und Overfitting entgegenzuwirken, wurden verschiedene Augmentationstechniken auf die Trainingsbilder angewendet.
+Diese Transformationen werden zur Laufzeit zufällig auf jedes Bild angewendet, sodass das Netzwerk in jeder Epoche leicht veränderte Varianten der Trainingsbilder sieht.
+
+Folgende Augmentationstechniken kamen für die Trainingsmenge zum Einsatz:
+\begin{itemize}
+    \item \textbf{Zufälliges horizontales Spiegeln}: Das Bild wird mit einer Wahrscheinlichkeit von 50\,\% entlang der horizontalen Achse gespiegelt.
+    \item \textbf{Zufälliges vertikales Spiegeln}: Analog dazu wird das Bild mit einer Wahrscheinlichkeit von 50\,\% entlang der vertikalen Achse gespiegelt.
+    \item \textbf{Zufällige Rotation}: Das Bild wird um einen zufälligen Winkel im Bereich von $\pm 20^\circ$ gedreht. Da Fernerkundungsbilder keine feste natürliche Orientierung besitzen, ist eine moderate Rotation semantisch sinnvoll und erzeugt gültige neue Trainingsbeispiele.
+\end{itemize}
+Für die Validierungs- und Testmenge wurden keine geometrischen Augmentationen angewendet, um eine unverfälschte Bewertung der Modellleistung sicherzustellen.
+ 
+Alle Bilder wurden zunächst in Tensoren konvertiert (Wertebereich $[0, 1]$) und anschließend kanalweise mit einem Mittelwert von $\mu = 0{,}5$ und einer Standardabweichung von $\sigma = 0{,}5$ normalisiert, sodass die resultierenden Pixelwerte im Bereich $[-1, 1]$ liegen.
+Diese Normalisierung sorgt für eine zentrierte und skalierte Eingabeverteilung, was die Konvergenz des Trainings begünstigt.
+
+\subsection{Netzarchitektur}
+\label{subsec:architektur}
+ 
+Die Entwicklung der Netzarchitektur folgte einem inkrementellen Ansatz: Ausgehend von einem möglichst einfachen Basisnetzwerk wurden schrittweise einzelne Schichtarten oder Techniken hinzugefügt, um deren isolierten Einfluss auf die Klassifikationsleistung zu untersuchen.
+Die so gewonnenen Erkenntnisse wurden abschließend in optimierte Gesamtarchitekturen integriert.
+Alle Netzwerke verwenden ausschließlich $3 \times 3$-Faltungskerne mit Padding~1, ReLU-Aktivierungsfunktionen sowie Max-Pooling-Schichten ($2 \times 2$, Stride~2) zur räumlichen Reduktion.
+Die Ausgabeschicht besteht in jedem Fall aus einer vollständig verbundenen Schicht mit 38~Neuronen (eine pro Klasse), ohne explizite Softmax-Aktivierung, da die verwendete Verlustfunktion \texttt{CrossEntropyLoss} die Softmax-Berechnung intern durchführt.
+ 
+\paragraph{Phase~1: Basisnetzwerk.}
+Das \textbf{Base\_Net} bildet den Ausgangspunkt und ist bewusst schlank gehalten.
+Es besteht aus fünf Convolution-Layern mit jeweils 32~Feature-Maps (die letzte mit 16~Feature-Maps) und zwei Max-Pooling-Schichten.
+Der Klassifikationskopf umfasst drei vollständig verbundene Schichten (16\,384 $\rightarrow$ 128 $\rightarrow$ 128 $\rightarrow$ 38).
+Dieses Netzwerk dient als Referenz, um den Effekt jeder einzelnen Änderung bewerten zu können.
+ 
+\paragraph{Phase~2: Isolierte Variation einzelner Komponenten.}
+Auf Basis des Base\_Net wurden fünf Varianten erzeugt, die jeweils genau eine Komponente verändern:
+ 
+\begin{itemize}
+    \item \textbf{Conv\_Net} -- \textit{Mehr Convolution-Layern}: Die Anzahl der Convolution-Layern wird von fünf auf acht erhöht (alle mit 32~Feature-Maps, letzte mit 16), bei nur zwei Pooling-Schichten. Ziel ist es, den Einfluss einer größeren Netztiefe im Faltungsteil zu untersuchen, ohne die räumliche Auflösung stärker zu reduzieren.
+ 
+    \item \textbf{Dense\_Net} -- \textit{Mehr vollständig verbundene Schichten}: Der Faltungsteil bleibt identisch zum Base\_Net, jedoch wird der Klassifikationskopf auf sieben vollständig verbundene Schichten erweitert (128 $\rightarrow$ 128 $\rightarrow$ 128 $\rightarrow$ 128 $\rightarrow$ 128 $\rightarrow$ 128 $\rightarrow$ 38). Damit wird untersucht, ob ein tieferer Klassifikationskopf die Entscheidungsgrenze verbessert.
+ 
+    \item \textbf{Pooling\_Net} -- \textit{Aggressiveres Downsampling}: Statt zwei werden vier Max-Pooling-Schichten eingesetzt, jeweils nach einer Convolution-Layer. Die räumliche Auflösung wird dadurch auf $16 \times 16$ vor dem Flattening reduziert, was die Parameterzahl im Klassifikationskopf deutlich verringert (4\,096 $\rightarrow$ 128 statt 16\,384 $\rightarrow$ 128).
+ 
+    \item \textbf{Dropout\_Net} -- \textit{Dropout-Regularisierung}: Das Base\_Net wird um eine Dropout-Schicht mit einer Rate von $p = 0{,}5$ zwischen der ersten und zweiten vollständig verbundenen Schicht ergänzt. Damit wird geprüft, ob Dropout das Overfitting reduziert.
+ 
+    \item \textbf{BatchNorm\_Net} -- \textit{Batch-Normalisierung}: Jede Convolution-Layer und die ersten beiden vollständig verbundenen Schichten werden um eine Batch-Normalisierung ergänzt, die vor der ReLU-Aktivierung angewendet wird. Dies soll die Trainingskonvergenz beschleunigen und die Empfindlichkeit gegenüber der Lernrate verringern.
+\end{itemize}
+ 
+\paragraph{Phase~3: Kombinierte Architekturen.}
+Die Erkenntnisse aus Phase~2 wurden schrittweise in leistungsfähigere Gesamtarchitekturen integriert:
+ 
+\begin{itemize}
+    \item \textbf{BatchNorm\_Dense\_Pool\_Net}: Kombiniert die Batch-Normalisierung aus dem BatchNorm\_Net mit drei statt zwei Pooling-Schichten (räumliche Reduktion auf $32 \times 32$). Der Klassifikationskopf umfasst drei vollständig verbundene Schichten mit jeweils vorgeschalteter Batch-Normalisierung (16\,384 $\rightarrow$ 128 $\rightarrow$ 128 $\rightarrow$ 128 $\rightarrow$ 38).
+ 
+    \item \textbf{BatchNorm\_Dense\_Pool\_Conv\_Net}: Erweitert das BatchNorm\_Dense\_Pool\_Net um einen zusätzlichen sechsten Convolution-Layer (32~Filter), ebenfalls mit Batch-Normalisierung.
+ 
+    \item \textbf{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_Net}: Identisch zum BatchNorm\_Dense\_Pool\_Conv\_Net, ergänzt jedoch eine Dropout-Schicht ($p = 0{,}5$) zwischen der zweiten und dritten vollständig verbundenen Schicht. Damit wird Dropout zusätzlich zur Batch-Normalisierung untersucht.
+ 
+    \item \textbf{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net}: Diese Architektur basiert auf dem BatchNorm\_Dense\_Pool\_Conv\_Dropout\_Net, verdoppelt jedoch die Anzahl der Filterkerne in den Convolution-Layern von 32 auf 64 (letzte Schicht: 32 statt 16). Dies erhöht die Kapazität des Netzwerks, mehr parallele Merkmalsrepräsentationen zu lernen, auf Kosten einer größeren Parameterzahl im Faltungsteil.
+\end{itemize}
+ 
+Tabelle~\ref{tab:architektur_uebersicht} fasst die wesentlichen Unterschiede der zehn getesteten Architekturen zusammen.
+ 
+\begin{table*}[t]
+\centering
+\caption{Übersicht der getesteten Netzarchitekturen. Conv = Anzahl Convolution-Layern, Pool = Anzahl Max-Pooling-Schichten, FC = Anzahl vollständig verbundener Schichten (inkl. Ausgabeschicht), BN = Batch-Normalisierung, DO = Dropout ($p = 0{,}5$).}
+\label{tab:architektur_uebersicht}
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Phase} & \textbf{Netzwerk} & \textbf{Conv} & \textbf{Pool} & \textbf{FC} & \textbf{BN} & \textbf{DO} \\
+\midrule
+1 & Base\_Net                                       & 5 & 2 + GAP & 3 & -- & -- \\
+\midrule
+2 & Conv\_Net                                       & 8 & 2       & 3 & -- & -- \\
+2 & Dense\_Net                                      & 5 & 2       & 7 & -- & -- \\
+2 & Pooling\_Net                                    & 5 & 4       & 3 & -- & -- \\
+2 & Dropout\_Net                                    & 5 & 2       & 3 & -- & \checkmark \\
+2 & BatchNorm\_Net                                  & 5 & 2       & 3 & \checkmark & -- \\
+\midrule
+3 & BatchNorm\_Dense\_Pool\_Net                     & 5 & 3       & 4 & \checkmark & -- \\
+3 & BatchNorm\_Dense\_Pool\_Conv\_Net               & 6 & 3       & 4 & \checkmark & -- \\
+3 & BatchNorm\_Dense\_Pool\_Conv\_Dropout\_Net  & 6 & 3       & 4 & \checkmark & \checkmark \\
+3 & BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net  & 6 & 3       & 4 & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table*}
+ 
+% --- 2.4 Trainingsverfahren ---
+\subsection{Trainingsverfahren}
+\label{subsec:training}
+ 
+Alle Netzwerke wurden unter identischen Bedingungen trainiert, um eine faire Vergleichbarkeit zu gewährleisten.
+Als Optimizer diente Adam mit den Standardparametern der PyTorch-Implementierung ($\eta = 10^{-3}$, $\beta_1 = 0{,}9$, $\beta_2 = 0{,}999$).
+Ein Learning-Rate-Scheduler wurde nicht eingesetzt, dadurch bleibt die Lernrate über alle Epochen konstant.
+ 
+Als Verlustfunktion wurde \texttt{CrossEntropyLoss} verwendet, die die Softmax-Berechnung und die negative Log-Likelihood in einem numerisch stabilen Schritt kombiniert und somit die Standardwahl für Multi-Klassen-Klassifikation in PyTorch darstellt.
+ 
+Das Training wurde über 15~Epochen mit einer Batchgröße von 64 durchgeführt.
+Auf Early Stopping wurde bewusst verzichtet, um alle Netze über die gleiche Anzahl an Epochen zu vergleichen.
+Die Validierungs-Accuracy und der Validierungs-Loss wurden nach jeder Epoche berechnet und mittels TensorBoard protokolliert und zusätzlich wurde in jeder Epoche eine Konfusionsmatrix auf der Validierungsmenge erstellt.
+ 
+Die Implementierung erfolgte in Python unter Verwendung von PyTorch.
+Die Wahl fiel bewusst auf PyTorch statt auf alternative Frameworks wie TensorFlow oder Keras, da diese zum Zeitpunkt der Durchführung nur eingeschränkte GPU-Unterstützung auf Windows- und macOS-Geräten boten.
+PyTorch hingegen ermöglicht über CUDA eine zuverlässige und plattformübergreifende GPU-Beschleunigung, was angesichts der heterogenen Entwicklungsumgebung im Team ausschlaggebend war.
+Alle Experimente wurden auf einer NVIDIA GeForce GTX 1080\,Ti durchgeführt.
+
+% --- 2.5 Evaluationsmetrik ---
+\subsection{Evaluationsmetrik}
+\label{subsec:evaluation}
+
+Zur Bewertung der Klassifikationsleistung wird die \textit{Accuracy} (Genauigkeit) herangezogen, definiert als der Anteil korrekt klassifizierter Bilder an der Gesamtzahl der Testbilder:
+\begin{equation}
+    \text{Accuracy} = \frac{\text{Anzahl korrekt klassifizierter Bilder}}{\text{Gesamtzahl der Testbilder}}
+\end{equation}
+
+Da der PatternNet-Datensatz gleichverteilte Klassen aufweist, ist die Accuracy eine aussagekräftige Metrik, die nicht durch Klassenungleichgewichte verzerrt wird.
+Darüber hinaus wurde die Konfusionsmatrix verwendet, um die Verteilung der Fehlklassifikationen über die Klassen hinweg zu analysieren und potenzielle Schwächen des Modells in Bezug auf bestimmte Klassen zu identifizieren.

@@ -1,2 +1,27 @@
 \section{Einleitung}
-Test
+\label{sec:einleitung}
+ 
+% --- 1.1 Motivation ---
+\subsection{Motivation und Problemstellung}
+\label{subsec:motivation}
+ 
+Die Klassifikation von Fernerkundungsbildern beschäftigt sich mit der Frage, welche Landnutzungs- oder Landbedeckungsklasse eine gegebene Bildszene repräsentiert.
+Dies ist von hoher praktischer Relevanz, da Satelliten- und Luftbilder in immer größerem Umfang verfügbar werden und eine manuelle Auswertung dieser Datenmengen weder zeitlich noch wirtschaftlich realisierbar ist.
+Automatisierte Verfahren sind daher unerlässlich, um beispielsweise Veränderungen in der Landnutzung zu erkennen, landwirtschaftliche Flächen zu überwachen oder Katastrophenschäden zu identifizieren.
+ 
+% --- 1.2 Zielsetzung ---
+\subsection{Zielsetzung der Arbeit}
+\label{subsec:zielsetzung}
+ 
+Ziel dieser Arbeit ist es, eine eigene CNN-Architektur zu entwerfen und zu trainieren, die Bilder des PatternNet-Datensatzes möglichst genau in die 38 vorgegebenen Szenenklassen klassifiziert.
+Im Vordergrund steht dabei nicht die Anwendung einer vortrainierten Standardarchitektur, sondern der eigenständige Entwurfsprozess: die systematische Auswahl von Schichten und anderen Parametern sowie die Analyse ihres Einflusses auf die Klassifikationsleistung.
+
+% --- 1.3 Aufbau der Arbeit ---
+\subsection{Aufbau der Arbeit}
+\label{subsec:aufbau}
+ 
+Der weitere Bericht ist wie folgt gegliedert:
+Abschnitt~\ref{sec:methode} beschreibt den verwendeten Datensatz, die Vorverarbeitung, die entwickelte Netzarchitektur sowie das Trainingsverfahren.
+In Abschnitt~\ref{sec:ergebnisse} werden die erzielten Ergebnisse anhand der gewählten Evaluationsmetriken präsentiert.
+Abschnitt~\ref{sec:diskussion} diskutiert die Ergebnisse und identifiziert Stärken sowie Limitationen des gewählten Ansatzes.
+Abschnitt~\ref{sec:fazit} fasst die Arbeit zusammen und gibt einen Ausblick auf mögliche Weiterentwicklungen.
