@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import io
 from sklearn.metrics import confusion_matrix
 
-from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net, BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net, Dropout_Net, BatchNorm_Net
+from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, Dropout_Net, BatchNorm_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net
 from Dataset import ImageFolderDataset
 
 NUM_EPOCHS = 15
@@ -78,8 +78,11 @@ def main():
     network = NET_CLASS().to(device)
     torchinfo.summary(network, input_size=(1, 3, 256, 256), device=device)
 
-    train_and_validate(train_dataloader, val_dataloader, network)
-    test(test_dataloader, network)
+    writer = SummaryWriter(f"runs/{NET_CLASS.__name__}")
+    train_and_validate(train_dataloader, val_dataloader, network, writer)
+    test_accuracy = test(test_dataloader, network)
+    writer.add_scalar("Accuracy/test", test_accuracy)
+    writer.close()
 
 
 def _dataset_paths(dataset):
@@ -180,8 +183,7 @@ def get_data_loaders():
 
 
 # Training function to train the model and validate after each epoch
-def train_and_validate(train_dataloader, val_dataloader, network):
-    writer = SummaryWriter(f"runs/{NET_CLASS.__name__}")
+def train_and_validate(train_dataloader, val_dataloader, network, writer):
 
     optimizer = torch.optim.Adam(network.parameters())
     loss_function = torch.nn.CrossEntropyLoss()
@@ -218,7 +220,6 @@ def train_and_validate(train_dataloader, val_dataloader, network):
             f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
             f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
         )
-    writer.close()
     print('Finished Training')
 
 
@@ -321,12 +322,8 @@ def test(test_dataloader, network):
 
     test_accuracy = 100.0 * correct / total
     print(f"Accuracy of the network on the test images: {test_accuracy:.2f}%")
+    return test_accuracy
 
 
 if __name__ == "__main__":
-    classes = [Base_Net, Dense_Net, Conv_Net, Pooling_Net, Dropout_Net, BatchNorm_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net,
-               BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net]
-    for cls in classes:
-        print(f"Testing {cls.__name__}...")
-        NET_CLASS = cls
-        main()
+    main()
