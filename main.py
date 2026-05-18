@@ -11,14 +11,14 @@ import matplotlib.pyplot as plt
 import io
 from sklearn.metrics import confusion_matrix
 
-from Nets import Base_Net, Dropout_Net, BatchNorm_Net
+from Nets import Base_Net, Dropout_Net, BatchNorm_Net, Best_Net, BestConv_Net, BestConvDropout_Net, BestFeatureMaps_Net
 from Dataset import ImageFolderDataset
 
 NUM_EPOCHS = 15
 BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/PatternNet_Images")
-NET_CLASS = Dropout_Net
+NET_CLASS = BestFeatureMaps_Net
 TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
@@ -181,15 +181,7 @@ def get_data_loaders():
 # Training function to train the model and validate after each epoch
 def train_and_validate(train_dataloader, val_dataloader, network):
     writer = SummaryWriter(f"runs/{NET_CLASS.__name__}")
-    
-    INITIAL_LR = 0.1
-    DECAY_RATE = 1.0
-    
-    optimizer = torch.optim.Adam(network.parameters(), lr=INITIAL_LR)
-    scheduler = torch.optim.lr_scheduler.LambdaLR(
-        optimizer,
-        lr_lambda=lambda epoch: 1 / (1 + DECAY_RATE * epoch)
-    )
+    optimizer = torch.optim.Adam(network.parameters())
     loss_function = torch.nn.CrossEntropyLoss()
 
     log_sample_images(writer, train_dataloader)
@@ -209,9 +201,7 @@ def train_and_validate(train_dataloader, val_dataloader, network):
             optimizer.step()
             running_loss += loss.item()
 
-        scheduler.step()
         epoch_loss = running_loss / len(train_dataloader)
-        current_lr = scheduler.get_last_lr()[0]
         val_epoch_loss, val_accuracy, all_targets, all_preds = validate(
             val_dataloader, network, loss_function)
 
@@ -223,7 +213,7 @@ def train_and_validate(train_dataloader, val_dataloader, network):
 
         print(
             f"Epoch {epoch + 1}/{NUM_EPOCHS} | Train Loss: {epoch_loss:.4f} | "
-            f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}% | LR: {current_lr:.6f}"
+            f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
         )
     writer.close()
     print('Finished Training')
