@@ -1,11 +1,37 @@
-\clearpage
 \setcounter{page}{1}
 \maketitlesupplementary
 
 
 \section{Ergänzende Abbildungen}
 \label{sec:supp_figures}
-\begin{table*}[!t]
+
+\begin{table}[H]
+    \centering
+    \caption{Übersicht der getesteten Netzarchitekturen. Conv = Anzahl Convolution-Layern, Pool = Anzahl Max-Pooling-Schichten, FC = Anzahl vollständig verbundener Schichten (inkl. Ausgabeschicht), BN = Batch-Normalisierung, DO = Dropout ($p = 0{,}5$).}
+    \label{tab:architektur_uebersicht}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{llccccc}
+            \toprule
+            \textbf{Phase} & \textbf{Netzwerk}                              & \textbf{Conv} & \textbf{Pool} & \textbf{FC} & \textbf{BN} & \textbf{DO} \\
+            \midrule
+            1              & Base\_Net                                      & 5             & 2 + GAP       & 3           & --          & --          \\
+            \midrule
+            2              & Conv\_Net                                      & 8             & 2             & 3           & --          & --          \\
+            2              & Dense\_Net                                     & 5             & 2             & 7           & --          & --          \\
+            2              & Pooling\_Net                                   & 5             & 4             & 3           & --          & --          \\
+            2              & Dropout\_Net                                   & 5             & 2             & 3           & --          & \checkmark  \\
+            2              & BatchNorm\_Net                                 & 5             & 2             & 3           & \checkmark  & --          \\
+            \midrule
+            3              & BatchNorm\_Dense\_Pool\_Net                    & 5             & 3             & 4           & \checkmark  & --          \\
+            3              & BatchNorm\_Dense\_Pool\_Conv\_Net              & 6             & 3             & 4           & \checkmark  & --          \\
+            3              & BatchNorm\_Dense\_Pool\_Conv\_Dropout\_Net     & 6             & 3             & 4           & \checkmark  & \checkmark  \\
+            3              & BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net & 6             & 3             & 4           & \checkmark  & \checkmark  \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+\begin{table}[H]
     \centering
     \caption{Übersicht der Validierungs- und Test-Accuracy der untersuchten
         Netze. Werte als Prozentangaben.}
@@ -28,9 +54,9 @@
             \hline
         \end{tabular}%
     }
-\end{table*}
+\end{table}
 
-\begin{figure*}[!t]
+\begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/ValAccuracyAllNets.png}
     \caption{Validierungs-Accuracy über die Trainings-Epochen für alle
@@ -39,7 +65,7 @@
     \label{fig:val_accuracy_all_nets}
 \end{figure*}
 
-\begin{figure*}[!t]
+\begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/BestConfusion.png}
     \caption{Konfusionsmatrix des besten Modells. Die Matrix ist fast vollständig

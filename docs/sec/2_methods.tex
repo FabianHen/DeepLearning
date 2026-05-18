@@ -25,6 +25,7 @@ Dadurch konnten die Auswirkungen von Augmentationstechniken und Architekturände
 Um die Generalisierungsfähigkeit des Modells zu verbessern und Overfitting entgegenzuwirken, wurden verschiedene Augmentationstechniken auf die Trainingsbilder angewendet.
 Diese Transformationen werden zur Laufzeit zufällig auf jedes Bild angewendet, sodass das Netzwerk in jeder Epoche leicht veränderte Varianten der Trainingsbilder sieht.
 
+% TODO: Zoom Hinzufügen
 Folgende Augmentationstechniken kamen für die Trainingsmenge zum Einsatz:
 \begin{itemize}
     \item \textbf{Zufälliges horizontales Spiegeln}: Das Bild wird mit einer Wahrscheinlichkeit von 50\,\% entlang der horizontalen Achse gespiegelt.
@@ -79,31 +80,6 @@ Die Erkenntnisse aus Phase~2 wurden schrittweise in leistungsfähigere Gesamtarc
 \end{itemize}
  
 Tabelle~\ref{tab:architektur_uebersicht} fasst die wesentlichen Unterschiede der zehn getesteten Architekturen zusammen.
- 
-\begin{table*}[t]
-\centering
-\caption{Übersicht der getesteten Netzarchitekturen. Conv = Anzahl Convolution-Layern, Pool = Anzahl Max-Pooling-Schichten, FC = Anzahl vollständig verbundener Schichten (inkl. Ausgabeschicht), BN = Batch-Normalisierung, DO = Dropout ($p = 0{,}5$).}
-\label{tab:architektur_uebersicht}
-\small
-\begin{tabular}{llccccc}
-\toprule
-\textbf{Phase} & \textbf{Netzwerk} & \textbf{Conv} & \textbf{Pool} & \textbf{FC} & \textbf{BN} & \textbf{DO} \\
-\midrule
-1 & Base\_Net                                       & 5 & 2 + GAP & 3 & -- & -- \\
-\midrule
-2 & Conv\_Net                                       & 8 & 2       & 3 & -- & -- \\
-2 & Dense\_Net                                      & 5 & 2       & 7 & -- & -- \\
-2 & Pooling\_Net                                    & 5 & 4       & 3 & -- & -- \\
-2 & Dropout\_Net                                    & 5 & 2       & 3 & -- & \checkmark \\
-2 & BatchNorm\_Net                                  & 5 & 2       & 3 & \checkmark & -- \\
-\midrule
-3 & BatchNorm\_Dense\_Pool\_Net                     & 5 & 3       & 4 & \checkmark & -- \\
-3 & BatchNorm\_Dense\_Pool\_Conv\_Net               & 6 & 3       & 4 & \checkmark & -- \\
-3 & BatchNorm\_Dense\_Pool\_Conv\_Dropout\_Net  & 6 & 3       & 4 & \checkmark & \checkmark \\
-3 & BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net  & 6 & 3       & 4 & \checkmark & \checkmark \\
-\bottomrule
-\end{tabular}
-\end{table*}
  
 % --- 2.4 Trainingsverfahren ---
 \subsection{Trainingsverfahren}
