@@ -116,7 +116,9 @@ Die Validierungs-Accuracy und der Validierungs-Loss wurden nach jeder Epoche ber
 % --- 2.5 Implementierungsdetails ---
 \subsection{Implementierungsdetails}
 \label{subsec:implementierung}
- 
+
+Im folgenden werden einige wichtige Implementierungsdetails~\cite{eigener_code} beschrieben, die für die Reproduzierbarkeit der Ergebnisse und das Verständnis der Trainingspipeline relevant sind.
+
 \paragraph{Dataset-Klasse.}
 Für das Laden und Verwalten der Bilddaten wurde eine eigene Dataset-Klasse (\texttt{ImageFolderDataset}) implementiert, die von \texttt{torch.utils.data.Dataset} erbt.
 Beim Initialisieren durchsucht die Klasse die Ordnerstruktur des PatternNet-Datensatzes, in der jede Klasse als eigener Unterordner vorliegt, und erstellt automatisch ein Mapping von Klassennamen zu numerischen Indizes.
@@ -139,6 +141,8 @@ Alle Trainingsläufe wurden mit TensorBoard protokolliert.
 Nach jeder Epoche werden der Trainings-Loss, der Validierungs-Loss sowie die Validierungs-Accuracy als Skalare aufgezeichnet.
 Darüber hinaus wird in jeder Epoche eine Konfusionsmatrix auf der Validierungsmenge berechnet und als Bild gespeichert, was eine visuelle Analyse der klassenspezifischen Fehler über den Trainingsverlauf ermöglicht.
 Zu Beginn jedes Laufs wird zudem ein Grid von 16~augmentierten Trainingsbildern mitsamt ihren Klassenlabels geloggt, um die Augmentationstransformationen visuell zu überprüfen.
+
+Der vollständige Quellcode ist öffentlich verfügbar.\footnote{\url{https://github.com/FabianHen/DeepLearning}}
 
 % --- 2.6 Evaluationsmetrik ---
 \subsection{Evaluationsmetrik}
