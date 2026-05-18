@@ -2,11 +2,12 @@
 \label{sec:fazit}
 
 In dieser Arbeit wurden zehn verschiedene Netzarchitekturen auf dem
-PatternNet-Datensatz verglichen.
+PatternNet-Datensatz verglichen; die Experimente basierten dabei auf einer
+verkleinerten, aber weiterhin balancierten Teilmenge.
 Die Studie zeigt, dass architekturspezifische Entscheidungen (Tiefe,
 Feature-Map-Anzahl, Normalisierung und Regularisierung) einen signifikanten
 Einfluss auf Generalisierung und Stabilität des Trainings haben.
-Datenaugmentation (insbesondere zufälliges Resizing/Zoom) erhöht die Robustheit
+Die eingesetzte Datenaugmentation erhöht die Robustheit
 gegenüber Lage- und Skalenvariationen und trägt zur Reduktion spezifischer
 Verwechslungen bei. Die Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net},
 in der zusätzliche Layer und eine erhöhte Feature-Map-Anzahl verwendet wurden,

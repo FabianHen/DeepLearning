@@ -5,7 +5,6 @@
 
 \section{Ergänzende Abbildungen}
 \label{sec:supp_figures}
-% Zusatzmaterial: Tabelle mit Überblick und Validierungs-Accuracy-Verlauf
 \begin{table*}[!t]
     \centering
     \caption{Übersicht der Validierungs- und Test-Accuracy der untersuchten
@@ -31,33 +30,33 @@
     }
 \end{table*}
 
-\begin{figure}[ht]
+\begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.9\linewidth]{figures/ValAccuracyAllNets.png}
+    \includegraphics[width=\textwidth]{figures/ValAccuracyAllNets.png}
     \caption{Validierungs-Accuracy über die Trainings-Epochen für alle
         untersuchten Netze. Modelle mit BatchNorm liegen klar über den Netzen
         ohne BatchNorm.}
     \label{fig:val_accuracy_all_nets}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[ht]
+\begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.9\linewidth]{figures/BestConfusion.png}
+    \includegraphics[width=\textwidth]{figures/BestConfusion.png}
     \caption{Konfusionsmatrix des besten Modells. Die Matrix ist fast vollständig
         diagonal; verbleibende Unsicherheiten konzentrieren sich auf visuell
         ähnliche Klassen wie \emph{ferry\_terminal}/\emph{harbor},
         \emph{overpass}/\emph{intersection} und
         \emph{sparse\_residential}/\emph{dense\_residential}.}
     \label{fig:best_confusion}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[ht]
+\begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.9\linewidth]{figures/WorstConfusion.png}
+    \includegraphics[width=\textwidth]{figures/WorstConfusion.png}
     \caption{Konfusionsmatrix des schwächsten Modells. Im Vergleich zum besten
         Modell ist die Diagonale deutlich unsicherer und die Fehlklassifikationen
         verteilen sich breiter über die Matrix.}
     \label{fig:worst_confusion}
-\end{figure}
+\end{figure*}
 
 
