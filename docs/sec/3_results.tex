@@ -2,94 +2,70 @@
 \label{sec:ergebnisse}
 
 \subsection{Experimentelles Setup}
-Die in Abschnitt 2 beschriebenen Trainings- und Auswertungsbedingungen werden
-hier als bekannt vorausgesetzt; im Folgenden werden daher nur die Resultate
-und ihre Einordnung dargestellt.
+Die in Abschnitt \ref{sec:methode} beschriebenen Trainings- und
+Auswertungsbedingungen werden hier als bekannt vorausgesetzt. Im Folgenden
+konzentrieren wir uns auf die präsentierten Resultate, deren Einordnung und die
+relevanten Schlussfolgerungen für die Wahl von Architektur und Regularisierung.
 
 \subsection{Quantitative Ergebnisse}
-Die zentrale Übersicht der Validierungs- und Test-Accuracy aller zehn
-Netzarchitekturen ist in Tabelle \ref{tab:results} im Anhang zusammengefasst.
+Die zusammenfassende Übersicht aller Validierungs- und Test-Accuracies ist in
+Tabelle \ref{tab:results} im Anhang zu finden. Daraus ergibt sich klar ein
+Leistungsgefälle: Modelle mit Batch-Normalisierung erreichen durchgängig höhere
+Accuracy-Werte als vergleichbare Modelle ohne BatchNorm. Besonders hervorzuheben
+ist das Modell \emph{BatchNorm\_Dense\_Pool\_Conv\_Net}, das mit einer
+Validierungs-Accuracy von 85.8\% und einer Test-Accuracy von 84.2\% das beste
+Ergebnis erzielt. Das Basismodell \emph{Base\_Net} liegt demgegenüber bei
+57.9\% (Val) bzw. 59.6\% (Test).
 
-Tabelle \ref{tab:results} zeigt, dass \emph{BatchNorm\_Dense\_Pool\_Conv\_Net}
-das beste Modell in dieser Auswertung ist. Abbildung \ref{fig:compare_best_base}
-stellt dieses Modell anschließend noch einmal direkt dem \emph{Base\_Net}
-gegenüber. In Rot ist das Base\_Net zu sehen: Es erreicht zwar ein niedrigeres
-Accuracy-Niveau, verläuft dafür aber deutlich gleichmäßiger und stabiler über
-die Epochen. Die blaue Kurve (BatchNorm\_Dense\_Pool\_Conv\_Net) liegt klar
-darüber und erzielt die beste Leistung, zeigt aber zugleich stärkere Sprünge
-zwischen den Epochen. Das spricht dafür, dass BatchNorm die Optimierung und das
-Endniveau verbessert, während das Basismodell konservativer, aber weniger
-leistungsfähig trainiert.
+Abbildung \ref{fig:compare_best_base} vergleicht den Trainingsverlauf des
+besten Modells direkt mit dem \emph{Base\_Net}. Während das Basisnetz einen
+gleichmäßigeren, weniger schwankenden Verlauf zeigt, erzielt das BatchNorm-Netz
+ein deutlich höheres Leistungsniveau, geht aber mit stärkeren epochalen
+Schwankungen einher. Diese Differenz spricht dafür, dass BatchNorm die
+Optimierung beschleunigt und das erreichbare Endniveau anhebt, zugleich jedoch
+die Kurven etwas volatiler macht.
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.85\linewidth]{figures/CompareBestBase.png}
-    \caption{Vergleich zwischen Base\_Net (rot) und
-        BatchNorm\_Dense\_Pool\_Conv\_Net (blau). Das Basismodell verläuft
-        gleichmäßiger, bleibt aber in der Accuracy klar unter dem
-        BatchNorm-Modell, welches deutlich besser performt, jedoch stärkere
-        epochale Sprünge zeigt.}
-    \label{fig:compare_best_base}
+      \centering
+      \includegraphics[width=0.85\linewidth]{figures/CompareBestBase.png}
+      \caption{Vergleich der Validierungsverläufe von \emph{Base\_Net}
+            (rot) und \emph{BatchNorm\_Dense\_Pool\_Conv\_Net} (blau). Das
+            BatchNorm-Modell erreicht ein deutlich höheres Leistungsniveau, zeigt
+            aber stärkere epochale Schwankungen als das stabilere Basismodell.}
+      \label{fig:compare_best_base}
 \end{figure}
 
-Die Validierungs-Accuracy-Verläufe für alle Netze sind in Abbildung
-\ref{fig:val_accuracy_all_nets} dargestellt. Dort erkennt man eine klare
-Trennung zwischen den Netzen mit BatchNorm und den Netzen ohne BatchNorm: Die
-BatchNorm-Modelle liegen konsistent im oberen Accuracy-Bereich, während die
-Modelle ohne BatchNorm deutlich früher stagnieren und auf einem niedrigeren
-Niveau verbleiben. Diese Beobachtung wird in der nachfolgenden Analyse der
-Fehlklassifikationen nochmals aus klassenweiser Perspektive aufgegriffen.
-
-Die Einträge in Tabelle \ref{tab:results} basieren auf den hier durchgeführten
-Trainingsläufen. Die Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net}
-wurde ebenfalls evaluiert; trotz zusätzlicher Layer und deutlich längerer
-Trainingszeit zeigt sie keine relevante Verbesserung der Accuracy. Der
-Mehraufwand in Rechenzeit und Speicherressourcen steht damit in keinem
-angemessenen Verhältnis zum erzielten Leistungsgewinn.
-
-Überanpassung (Overfitting) war in unseren Läufen kaum zu beobachten: Die
-Trainings- und Validierungsverläufe divergierten nicht signifikant, was auf
-gute Regularisierung und passende Augmentationen hindeutet.
-
-Die detaillierte Tabelle mit Validierungs- und Test-Ergebnissen befindet sich im Anhang (Tabelle \ref{tab:results}).
-
-Für jede Architektur wurden die Lernkurven (Training/Validation Loss,
-Accuracy) dokumentiert und die finale Confusion-Matrix ausgewertet. Im Anhang
-finden sich die beiden exemplarischen Konfusionsmatrizen (beste / schlechteste
-Netze) zur Veranschaulichung der Bandbreite an Klassifikationsverläufen. Der
-Vergleich zeigt, dass die schlechteste Matrix deutlich unsicherer ist: Die
-Diagonale ist schwächer und die Fehlklassifikationen verteilen sich breiter
-über das gesamte Raster. Die beste Matrix ist dagegen klarer strukturiert und
-fast vollständig diagonal, mit den verbleibenden Verwechslungen vor allem
-zwischen visuell sehr ähnlichen Klassen, insbesondere \emph{ferry\_terminal}/\emph{harbor},
-\emph{overpass}/\emph{intersection} sowie \emph{sparse\_residential}/\emph{dense\_residential}.
+In unseren Läufen war Overfitting allgemein wenig ausgeprägt: Trainings- und
+Validierungsverläufe divergierten nicht stark, was auf sinnvolle
+Regularisierung und die angewandten Augmentationsstrategien hindeutet.
 
 \subsection{Konfusionsmatrix und klassenweise Analyse}
-Ausgehend von der zuvor beschriebenen Leistungsdifferenz betrachten wir nun die
-Fehlklassifikationen im Detail. Für die vollständige klassenweise Fehleranalyse
-verweisen wir auf die beiden Konfusionsmatrizen im Anhang; dort werden das beste
-und das schlechteste Modell direkt gegenübergestellt.
+Die klassenweise Betrachtung der Fehlklassifikationen ergänzt die globalen
+Accuracy-Werte: Die Konfusionsmatrix des besten Modells [\ref{fig:best_confusion}] ist nahezu diagonal und
+zeigt nur noch wenige, konsistente Verwechslungen zwischen visuell ähnlichen
+Klassen. Typische Fehlerpaare sind \emph{ferry\_terminal} mit
+\emph{harbor}, \emph{overpass} mit \emph{intersection} sowie
+\emph{sparse\_residential} mit \emph{dense\_residential}. Die Konfusionsmatrix
+des schlechtesten Modells [\ref{fig:worst_confusion}] dagegen weist eine deutlich verwischtere Diagonale auf
+und verteilt Fehlklassifikationen breiter über das Raster.
 
-\subsection{Qualitative Beobachtungen}
-Aus den vorliegenden Messergebnissen ergeben sich folgende Beobachtungen:
-\begin{itemize}
-    \item Das beste Modell, \emph{BatchNorm\_Dense\_Pool\_Conv\_Net}, erreicht
-          eine Validierungs-Accuracy von 85.8\% und eine Test-Accuracy von
-          84.2\%, und übertrifft damit das Basismodell \emph{Base\_Net}
-          (Val 57.9\%, Test 59.6\%) deutlich.
-    \item Modelle mit BatchNorm (z. B. \emph{BatchNorm\_Net},
-          \emph{BatchNorm\_Dense\_Pool\_Conv\_Net}) zeigen durchweg höhere
-          Validierungs- und Test-Accuracies als Modelle ohne BatchNorm.
-    \item Die Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net}
-          liefert (Val 80.0\%, Test 77.2\%) keine relevante Verbesserung
-          gegenüber vergleichbaren BatchNorm-Modellen, obwohl sie deutlich
-          komplexer ist und längere Trainingszeiten erfordert.
-    \item Dropout reduziert in einigen Fällen die Varianz der Lernkurven,
-          kann jedoch die Konvergenz verlangsamen; konkrete Effekte hängen von der
-          Gesamtarchitektur ab (siehe Kurven in Abbildung \ref{fig:val_accuracy_all_nets}).
-    \item Die Konfusionsmatrix-Analyse bestätigt, dass das beste Modell eine
-          nahezu diagonale Matrix besitzt; verbleibende Verwechslungen treten
-          vorwiegend zwischen visuell ähnlichen Klassen auf, insbesondere
-          \emph{ferry\_terminal}/\emph{harbor}, \emph{overpass}/\emph{intersection}
-          und \emph{sparse\_residential}/\emph{dense\_residential}.
-\end{itemize}
+Aus dieser Analyse lässt sich ableiten, dass die verbleibenden Fehler größtenteils
+auf inhärente visuelle Ähnlichkeiten zwischen bestimmten Klassen zurückzuführen
+sind und weniger auf generelle Mängel der Trainingsprozedur.
+
+\subsection{Interpretation und qualitative Beobachtungen}
+Die Ergebnisse lassen sich folgendermaßen zusammenfassen: Insgesamt deuten die
+Resultate darauf hin, dass Batch-Normalisierung die Modellleistung deutlich
+verbessert; das beste BatchNorm-Modell (\emph{BatchNorm\_Dense\_Pool\_Conv\_Net})
+erreicht 85.8\% (Val) bzw. 84.2\% (Test) und liegt damit weit über dem
+\emph{Base\_Net}. Komplexere Varianten wie
+\emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net} (80.0\% Val,
+77.2\% Test) zeigen hingegen keinen klaren zusätzlichen Nutzen im Verhältnis zu
+ihrem erhöhten Ressourcenbedarf.
+
+Dropout wirkt in unseren Experimenten primär als Varianz-Reduktor der Lernkurven
+und kann unter Umständen die Konvergenz verlangsamen; seine konkrete Wirkung ist
+aber architekturabhängig. Insgesamt legen die vorliegenden Kurven und
+Konfusionsmatrizen nahe, dass die Wahl von BatchNorm in Kombination mit einer
+ausreichenden, aber nicht übertriebenen Modellkomplexität den besten
+Trade-off zwischen Leistung und Aufwand liefert.

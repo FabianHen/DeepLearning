@@ -18,16 +18,10 @@ ein systematisches globales Verwechslungsmuster.
 
 Wesentliche Erkenntnisse:
 \begin{itemize}
-      \item Modelle mit größeren Feature-Sets erzielten tendenziell bessere
-            Erkennungsraten, benötigen jedoch stärkere Regularisierung und zeigen teils
-            sprunghaftere Lernkurven.
-      \item Batch-Normalisierung erhöhte die Trainingsstabilität und erlaubte
-            aggressivere Lernraten.
-      \item Gezielte Augmentationen und eine klassengewichtete Verlustfunktion sind
-            erfolgversprechende Maßnahmen gegen die verbleibenden Verwechslungen.
+      \item Das beste Modell war \emph{BatchNorm\_Dense\_Pool\_Conv\_Net} (85.8\% Val, 84.2\% Test).
+      \item Die komplexere Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net} erforderte
+            deutlich längere Trainingszeiten, brachte aber keine relevante Verbesserung der Accuracy.
+      \item Die eingesetzte Datenaugmentation erhöht die Robustheit gegenüber Lage- und Skalenvariationen.
+      \item Die Confusion-Matrizen zeigen, dass die verbleibenden Fehler überwiegend auf visuell
+            ähnliche Klassen zurückzuführen sind.
 \end{itemize}
-
-Abschließend empfehlen wir, die hier vorgeschlagenen Verbesserungen
-(erweiterte Augmentation, Ensembling, detaillierte Hyperparameter-Suche) in
-Folgearbeiten umzusetzen, um die Leistungsgrenze auf dem PatternNet-Datensatz
-weiter anzuheben.
