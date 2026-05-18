@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import io
 from sklearn.metrics import confusion_matrix
 
-from Nets import Base_Net, Dropout_Net, BatchNorm_Net, Best_Net, BestConv_Net, BestConvDropout_Net, BestFeatureMaps_Net
+from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, Best_Net, BestConv_Net, BestConvDropout_Net, BestFeatureMaps_Net
 from Dataset import ImageFolderDataset
 
 NUM_EPOCHS = 15
@@ -181,6 +181,7 @@ def get_data_loaders():
 # Training function to train the model and validate after each epoch
 def train_and_validate(train_dataloader, val_dataloader, network):
     writer = SummaryWriter(f"runs/{NET_CLASS.__name__}")
+
     optimizer = torch.optim.Adam(network.parameters())
     loss_function = torch.nn.CrossEntropyLoss()
 
@@ -213,6 +214,7 @@ def train_and_validate(train_dataloader, val_dataloader, network):
 
         print(
             f"Epoch {epoch + 1}/{NUM_EPOCHS} | Train Loss: {epoch_loss:.4f} | "
+            f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
             f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
         )
     writer.close()
