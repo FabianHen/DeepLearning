@@ -31,11 +31,24 @@ Folgende Augmentationstechniken kamen für die Trainingsmenge zum Einsatz:
     \item \textbf{Zufälliges horizontales Spiegeln}: Das Bild wird mit einer Wahrscheinlichkeit von 50\,\% entlang der horizontalen Achse gespiegelt.
     \item \textbf{Zufälliges vertikales Spiegeln}: Analog dazu wird das Bild mit einer Wahrscheinlichkeit von 50\,\% entlang der vertikalen Achse gespiegelt.
     \item \textbf{Zufällige Rotation}: Das Bild wird um einen zufälligen Winkel im Bereich von $\pm 20^\circ$ gedreht. Da Fernerkundungsbilder keine feste natürliche Orientierung besitzen, ist eine moderate Rotation semantisch sinnvoll und erzeugt gültige neue Trainingsbeispiele.
+    \item \textbf{Zufälliges Resizing/Zoom}: Das Bild wird zufällig skaliert, um die Robustheit gegenüber Skalenvariationen zu erhöhen.
 \end{itemize}
 Für die Validierungs- und Testmenge wurden keine geometrischen Augmentationen angewendet, um eine unverfälschte Bewertung der Modellleistung sicherzustellen.
  
 Alle Bilder wurden zunächst in Tensoren konvertiert (Wertebereich $[0, 1]$) und anschließend kanalweise mit einem Mittelwert von $\mu = 0{,}5$ und einer Standardabweichung von $\sigma = 0{,}5$ normalisiert, sodass die resultierenden Pixelwerte im Bereich $[-1, 1]$ liegen.
 Diese Normalisierung sorgt für eine zentrierte und skalierte Eingabeverteilung, was die Konvergenz des Trainings begünstigt.
+
+Abbildung~\ref{fig:augmentation} zeigt exemplarisch zwei Grids von je 16~Trainingsbildern nach Anwendung der beschriebenen Augmentationstransformationen.
+Die zufälligen Rotationen und Spiegelungen sind an den gedrehten Bildrändern und den schwarzen Eckbereichen erkennbar.
+ 
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.48\linewidth]{figures/augmentation_sample_1.png}
+    \hfill
+    \includegraphics[width=0.48\linewidth]{figures/augmentation_sample_2.png}
+    \caption{Beispielhafte Trainingsbilder nach Anwendung der Datenaugmentation (zufälliges horizontales und vertikales Spiegeln, Rotation um bis zu $\pm 20^\circ$) und Normalisierung. Die schwarzen Eckbereiche entstehen durch die zufällige Rotation.}
+    \label{fig:augmentation}
+\end{figure}
 
 \subsection{Netzarchitektur}
 \label{subsec:architektur}
@@ -88,19 +101,46 @@ Tabelle~\ref{tab:architektur_uebersicht} fasst die wesentlichen Unterschiede der
 Alle Netzwerke wurden unter identischen Bedingungen trainiert, um eine faire Vergleichbarkeit zu gewährleisten.
 Als Optimizer diente Adam mit den Standardparametern der PyTorch-Implementierung ($\eta = 10^{-3}$, $\beta_1 = 0{,}9$, $\beta_2 = 0{,}999$).
 Ein Learning-Rate-Scheduler wurde nicht eingesetzt, dadurch bleibt die Lernrate über alle Epochen konstant.
- 
+
 Als Verlustfunktion wurde \texttt{CrossEntropyLoss} verwendet, die die Softmax-Berechnung und die negative Log-Likelihood in einem numerisch stabilen Schritt kombiniert und somit die Standardwahl für Multi-Klassen-Klassifikation in PyTorch darstellt.
- 
-Das Training wurde über 15~Epochen mit einer Batchgröße von 64 durchgeführt.
-Auf Early Stopping wurde bewusst verzichtet, um alle Netze über die gleiche Anzahl an Epochen zu vergleichen.
-Die Validierungs-Accuracy und der Validierungs-Loss wurden nach jeder Epoche berechnet und mittels TensorBoard protokolliert und zusätzlich wurde in jeder Epoche eine Konfusionsmatrix auf der Validierungsmenge erstellt.
- 
+
 Die Implementierung erfolgte in Python unter Verwendung von PyTorch.
 Die Wahl fiel bewusst auf PyTorch statt auf alternative Frameworks wie TensorFlow oder Keras, da diese zum Zeitpunkt der Durchführung nur eingeschränkte GPU-Unterstützung auf Windows- und macOS-Geräten boten.
 PyTorch hingegen ermöglicht über CUDA eine zuverlässige und plattformübergreifende GPU-Beschleunigung, was angesichts der heterogenen Entwicklungsumgebung im Team ausschlaggebend war.
 Alle Experimente wurden auf einer NVIDIA GeForce GTX 1080\,Ti durchgeführt.
 
-% --- 2.5 Evaluationsmetrik ---
+Das Training wurde über 15~Epochen mit einer Batchgröße von 64 durchgeführt.
+Auf Early Stopping wurde bewusst verzichtet, um alle Netze über die gleiche Anzahl an Epochen zu vergleichen.
+Die Validierungs-Accuracy und der Validierungs-Loss wurden nach jeder Epoche berechnet und mittels TensorBoard protokolliert und zusätzlich wurde in jeder Epoche eine Konfusionsmatrix auf der Validierungsmenge erstellt.
+
+% --- 2.5 Implementierungsdetails ---
+\subsection{Implementierungsdetails}
+\label{subsec:implementierung}
+ 
+\paragraph{Dataset-Klasse.}
+Für das Laden und Verwalten der Bilddaten wurde eine eigene Dataset-Klasse (\texttt{ImageFolderDataset}) implementiert, die von \texttt{torch.utils.data.Dataset} erbt.
+Beim Initialisieren durchsucht die Klasse die Ordnerstruktur des PatternNet-Datensatzes, in der jede Klasse als eigener Unterordner vorliegt, und erstellt automatisch ein Mapping von Klassennamen zu numerischen Indizes.
+Pro Klasse wird eine reproduzierbare Zufallsstichprobe von 100~Bildern gezogen, wobei jede Klasse einen eigenen, deterministischen Zufallsgenerator mit festem Seed erhält.
+Dies verhindert eine Verzerrung, die bei einer rein lexikographischen Auswahl der ersten $N$~Dateien entstehen könnte.
+ 
+Die Klasse stellt eine Methode \texttt{stratified\_split} bereit, die den Datensatz klassenweise in Trainings-, Validierungs- und Testmenge aufteilt.
+Dabei wird jede Klasse einzeln gemischt und anschließend gemäß den vorgegebenen Verhältnissen aufgeteilt, sodass die Klassenverteilung in allen Teilmengen exakt erhalten bleibt.
+Jede Teilmenge wird als eigenständiges \texttt{ImageFolderDataset}-Objekt mit eigener Transform-Pipeline zurückgegeben, was eine saubere Trennung von Trainings- und Evaluationstransformationen ermöglicht.
+ 
+\paragraph{DataLoader-Konfiguration.}
+Die drei Teilmengen werden über PyTorchs \texttt{DataLoader} bereitgestellt.
+Der Trainings-DataLoader mischt die Daten in jeder Epoche neu (\texttt{shuffle=True}), während die Validierungs- und Test-DataLoader eine feste Reihenfolge beibehalten, um reproduzierbare Ergebnisse zu gewährleisten.
+Zur Beschleunigung des Datenladens wurden vier parallele Worker-Prozesse (\texttt{num\_workers=4}) eingesetzt, die jeweils zwei Batches im Voraus laden (\texttt{prefetch\_factor=2}).
+Durch \texttt{persistent\_workers=True} bleiben die Worker-Prozesse über die Epochen hinweg aktiv, was den Overhead durch wiederholtes Starten neuer Prozesse eliminiert.
+Auf Systemen mit CUDA-fähiger GPU wird zudem \texttt{pin\_memory=True} gesetzt, was den Transfer der Daten vom Hauptspeicher in den GPU-Speicher beschleunigt.
+ 
+\paragraph{Logging und Monitoring.}
+Alle Trainingsläufe wurden mit TensorBoard protokolliert.
+Nach jeder Epoche werden der Trainings-Loss, der Validierungs-Loss sowie die Validierungs-Accuracy als Skalare aufgezeichnet.
+Darüber hinaus wird in jeder Epoche eine Konfusionsmatrix auf der Validierungsmenge berechnet und als Bild gespeichert, was eine visuelle Analyse der klassenspezifischen Fehler über den Trainingsverlauf ermöglicht.
+Zu Beginn jedes Laufs wird zudem ein Grid von 16~augmentierten Trainingsbildern mitsamt ihren Klassenlabels geloggt, um die Augmentationstransformationen visuell zu überprüfen.
+
+% --- 2.6 Evaluationsmetrik ---
 \subsection{Evaluationsmetrik}
 \label{subsec:evaluation}
 
