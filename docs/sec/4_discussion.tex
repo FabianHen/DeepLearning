@@ -1,2 +1,79 @@
 \section{Diskussion}
-Diskussion
+
+In diesem Abschnitt werten wir die in Kapitel 3 präsentierten Ergebnisse aus
+und diskutieren die Implikationen für Architekturwahl, Regularisierung und
+Datensatzcharakteristika.
+
+\subsection{Architekturvergleich}
+Die vergleichende Betrachtung der zehn getesteten Modelle erlaubt Rückschlüsse
+auf die Wirkung spezifischer Designentscheidungen. Besonders deutlich wird dies
+in der in Anhang Abbildung \ref{fig:val_accuracy_all_nets} gezeigten Trennung
+zwischen Netzen mit BatchNorm und Netzen ohne BatchNorm: Die BatchNorm-Modelle
+erreichen konsistent höhere Validierungs-Accuracies, während die Modelle ohne
+BatchNorm früher stagnieren und auf einem niedrigeren Niveau verbleiben.
+
+Überanpassung (Overfitting) wurde in den vorliegenden Läufen kaum beobachtet;
+Trainings- und Validierungsverläufe zeigen keine ausgeprägte Divergenz.
+
+Entscheidend sind insbesondere:
+\begin{itemize}
+    \item Repräsentationskapazität: Modelle mit größerer Tiefe und mehr
+          Feature-Maps (z. B. \emph{BatchNorm\_Dense\_Pool\_Conv\_Net}) erreichen die
+          höchsten Validierungs- und Test-Accuracy-Werte, wobei die Kurven teils sprunghafter
+          verlaufen als beim Basismodell.
+    \item Ergänzend wurde eine Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net}
+          implementiert, in der die Anzahl der Feature-Maps erhöht wurde. Diese Variante
+          erfordert zusätzliche Layer sowie deutlich mehr Rechenzeit und Speicher;
+          die Ergebnisse zeigen dabei keine relevante Verbesserung der Accuracy,
+          weshalb der Mehraufwand gegenüber den Kosten nicht als gerechtfertigt
+          eingeschätzt wird.
+    \item Pooling-Strategien: Architekturen, die aggressives Pooling einsetzen,
+          reduzieren räumliche Auflösung und können feingranulare Klassentrennung (z. B.
+          kleine Objekte auf Luftbildern) erschweren.
+    \item Normalisierung und Dropout: Batch-Normalisierung stabilisiert die
+          Gradientenverteilung und ermöglicht höhere Lernraten; Dropout hilft gegen
+          Überanpassung, wirkt sich jedoch unterschiedlich stark auf verschiedene
+          Architekturen aus.
+\end{itemize}
+
+\subsection{Fehleranalyse und Klassen-spezifische Probleme}
+Die im Anhang gezeigten Konfusionsmatrizen \ref{fig:best_confusion} und
+\ref{fig:worst_confusion} machen den Unterschied zwischen dem besten und dem
+schlechtesten Modell klar sichtbar. Die schlechteste Matrix ist deutlich
+unsicherer und verteilt Fehlklassifikationen breiter, während die beste Matrix
+nahezu diagonal ist. Die verbleibenden Fehler beim besten Modell konzentrieren
+sich auf Klassen, die visuell ohnehin stark ähnlich sind, insbesondere
+\emph{ferry\_terminal}/\emph{harbor}, \emph{overpass}/\emph{intersection}
+und \emph{sparse\_residential}/\emph{dense\_residential}.
+
+Häufige Ursachen sind daher visuelle Ähnlichkeit, unterschiedliche Skalen im
+Bildausschnitt und unzureichende Variabilität in den Trainingsbeispielen.
+Für sehr ähnliche oder sehr kleine Klassen empfiehlt sich eine gezielte
+Aufstockung der Augmentation oder eine gewichtete Verlustfunktion.
+
+\subsection{Auswirkungen der Datenaugmentation}
+Unsere Augmentationskette (inkl. RandomResizedCrop, horizontale/vertikale Flip,
+Rotation) trägt zur Robustheit gegenüber Lage- und Skalenvariationen bei.
+Stärkere Zoom-Bereiche oder ergänzende Photometrie-Augmentierungen (Helligkeit,
+Kontrast, Farbverschiebungen) könnten die Generalisierung weiter verbessern,
+insbesondere für Klassen mit variierenden Oberflächenmerkmalen.
+
+\subsection{Limitationen}
+Die hier präsentierten Ergebnisse sind durch die Größe und Beschaffenheit des
+PatternNet-Datensatzes limitiert. Insbesondere mögliche Klassendisbalancen und die
+feste Crop-Größe ($256\times256$) beeinflussen die Resultate. Des Weiteren fehlen in
+dieser Studie Untersuchungen zu Hyperparameter-Sensitivitäten (z. B. Lernratenpläne, Batch-Größe,
+Optimierer-Varianten), die zukünftige Arbeiten ergänzen sollten.
+
+\subsection{Empfehlungen für zukünftige Arbeiten}
+Basierend auf den beobachteten Trends empfehlen wir:
+\begin{itemize}
+    \item Systematische Hyperparameter-Suche (LR-Scheduling, Weight Decay) mittels
+          Bayes-Optimierung oder Random Search.
+    \item Erweiterte Augmentation (MixUp, CutMix, starke Photometrie) und gezielte
+          Aufbereitung unterrepräsentierter Klassen.
+    \item Ensemble-Methoden über heterogene Architekturen zur Verbesserung der
+          Robustheit.
+    \item Analyse der Modellinterpretierbarkeit (Grad-CAM o.Ä.), um Fehlerursachen
+          auf Pixelebene zu identifizieren.
+\end{itemize}

@@ -3,15 +3,61 @@
 \maketitlesupplementary
 
 
-\section{Rationale}
-\label{sec:rationale}
-% 
-Having the supplementary compiled together with the main paper means that:
-% 
-\begin{itemize}
-\item The supplementary can back-reference sections of the main paper, for example, we can refer to \cref{sec:intro};
-\item The main paper can forward reference sub-sections within the supplementary explicitly (e.g. referring to a particular experiment); 
-\item When submitted to arXiv, the supplementary will already included at the end of the paper.
-\end{itemize}
-% 
-To split the supplementary pages from the main paper, you can use \href{https://support.apple.com/en-ca/guide/preview/prvw11793/mac#:~:text=Delete%20a%20page%20from%20a,or%20choose%20Edit%20%3E%20Delete).}{Preview (on macOS)}, \href{https://www.adobe.com/acrobat/how-to/delete-pages-from-pdf.html#:~:text=Choose%20%E2%80%9CTools%E2%80%9D%20%3E%20%E2%80%9COrganize,or%20pages%20from%20the%20file.}{Adobe Acrobat} (on all OSs), as well as \href{https://superuser.com/questions/517986/is-it-possible-to-delete-some-pages-of-a-pdf-document}{command line tools}.
+\section{Ergänzende Abbildungen}
+\label{sec:supp_figures}
+% Zusatzmaterial: Tabelle mit Überblick und Validierungs-Accuracy-Verlauf
+\begin{table*}[!t]
+    \centering
+    \caption{Übersicht der Validierungs- und Test-Accuracy der untersuchten
+        Netze. Werte als Prozentangaben.}
+    \label{tab:results}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcc}
+            \hline
+            Netz                                           & Val Accuracy (\%) & Test Accuracy (\%) \\
+            \hline
+            Base\_Net                                      & 57.9              & 59.6               \\
+            Dense\_Net                                     & 42.5              & 43.0               \\
+            Conv\_Net                                      & 50.7              & 51.2               \\
+            Pooling\_Net                                   & 58.0              & 57.4               \\
+            Dropout\_Net                                   & 52.5              & 50.4               \\
+            BatchNorm\_Net                                 & 82.6              & 79.6               \\
+            BatchNorm\_Dense\_Pool\_Net                    & 75.4              & 73.0               \\
+            BatchNorm\_Dense\_Pool\_Conv\_Net              & 85.8              & 84.2               \\
+            BatchNorm\_Dense\_Pool\_Conv\_Dropout\_Net     & 81.6              & 77.5               \\
+            BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net & 80.0              & 77.2               \\
+            \hline
+        \end{tabular}%
+    }
+\end{table*}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/ValAccuracyAllNets.png}
+    \caption{Validierungs-Accuracy über die Trainings-Epochen für alle
+        untersuchten Netze. Modelle mit BatchNorm liegen klar über den Netzen
+        ohne BatchNorm.}
+    \label{fig:val_accuracy_all_nets}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/BestConfusion.png}
+    \caption{Konfusionsmatrix des besten Modells. Die Matrix ist fast vollständig
+        diagonal; verbleibende Unsicherheiten konzentrieren sich auf visuell
+        ähnliche Klassen wie \emph{ferry\_terminal}/\emph{harbor},
+        \emph{overpass}/\emph{intersection} und
+        \emph{sparse\_residential}/\emph{dense\_residential}.}
+    \label{fig:best_confusion}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/WorstConfusion.png}
+    \caption{Konfusionsmatrix des schwächsten Modells. Im Vergleich zum besten
+        Modell ist die Diagonale deutlich unsicherer und die Fehlklassifikationen
+        verteilen sich breiter über die Matrix.}
+    \label{fig:worst_confusion}
+\end{figure}
+
+

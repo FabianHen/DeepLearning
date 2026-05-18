@@ -1,2 +1,31 @@
 \section{Zusammenfassung}
-Zusammenfassung
+
+In dieser Arbeit wurden zehn verschiedene Netzarchitekturen auf dem
+PatternNet-Datensatz verglichen.
+Die Studie zeigt, dass architekturspezifische Entscheidungen (Tiefe,
+Feature-Map-Anzahl, Normalisierung und Regularisierung) einen signifikanten
+Einfluss auf Generalisierung und Stabilität des Trainings haben.
+Datenaugmentation (insbesondere zufälliges Resizing/Zoom) erhöht die Robustheit
+gegenüber Lage- und Skalenvariationen und trägt zur Reduktion spezifischer
+Verwechslungen bei. Die Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net},
+in der zusätzliche Layer und eine erhöhte Feature-Map-Anzahl verwendet wurden,
+erforderte deutlich längere Trainingszeiten; die finale Bewertung ergab jedoch
+keine relevante Verbesserung der Accuracy. Die Confusion-Matrizen zeigen, dass
+die meisten Fehler auf visuell ähnliche Klassen zurückzuführen sind und nicht auf
+ein systematisches globales Verwechslungsmuster.
+
+Wesentliche Erkenntnisse:
+\begin{itemize}
+    \item Modelle mit größeren Feature-Sets erzielten tendenziell bessere
+          Erkennungsraten, benötigen jedoch stärkere Regularisierung und zeigen teils
+          sprunghaftere Lernkurven.
+    \item Batch-Normalisierung erhöhte die Trainingsstabilität und erlaubte
+          aggressivere Lernraten.
+    \item Gezielte Augmentationen und eine klassengewichtete Verlustfunktion sind
+          erfolgversprechende Maßnahmen gegen die verbleibenden Verwechslungen.
+\end{itemize}
+
+Abschließend empfehlen wir, die hier vorgeschlagenen Verbesserungen
+(erweiterte Augmentation, Ensembling, detaillierte Hyperparameter-Suche) in
+Folgearbeiten umzusetzen, um die Leistungsgrenze auf dem PatternNet-Datensatz
+weiter anzuheben.

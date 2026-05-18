@@ -4,7 +4,7 @@
 
 %%%%%%%%% PAPER TYPE  - PLEASE UPDATE FOR FINAL VERSION
 % \usepackage{cvpr}              % To produce the CAMERA-READY version
-\usepackage[review]{cvpr}      % To produce the REVIEW version
+\usepackage{cvpr}      % To produce the REVIEW version
 % \usepackage[pagenumbers]{cvpr} % To force page numbers, e.g. for an arXiv version
 
 % Import additional packages in the preamble file, before hyperref
@@ -25,10 +25,8 @@
 \def\confName{Meilenstein 1}
 \def\confYear{2026}
 
-%%%%%%%%% TITLE - PLEASE UPDATE
 \title{Abgabe \confName}
 
-%%%%%%%%% AUTHORS - PLEASE UPDATE
 \author{Fabian Henßler
 \and
 Max Steidle
@@ -36,12 +34,14 @@ Max Steidle
 
 \begin{document}
 \maketitle
-\input{sec/0_abstract}    
+\input{sec/0_abstract}
 \input{sec/1_intro}
 \input{sec/2_methods}
 \input{sec/3_results}
 \input{sec/4_discussion}
 \input{sec/5_summary}
+\appendix
+\input{sec/X_suppl}
 {
     \small
     \bibliographystyle{ieeenat_fullname}
@@ -49,6 +49,5 @@ Max Steidle
 }
 
 % WARNING: do not forget to delete the supplementary pages from your submission 
-% \input{sec/X_suppl}
 
 \end{document}
