@@ -52,29 +52,30 @@ Bildausschnitt und unzureichende Variabilität in den Trainingsbeispielen.
 Für sehr ähnliche oder sehr kleine Klassen empfiehlt sich eine gezielte
 Aufstockung der Augmentation oder eine gewichtete Verlustfunktion.
 
-\subsection{Auswirkungen der Datenaugmentation}
-Unsere Augmentationskette (inkl. RandomResizedCrop, horizontale/vertikale Flip,
-Rotation) trägt zur Robustheit gegenüber Lage- und Skalenvariationen bei.
-Stärkere Zoom-Bereiche oder ergänzende Photometrie-Augmentierungen (Helligkeit,
-Kontrast, Farbverschiebungen) könnten die Generalisierung weiter verbessern,
-insbesondere für Klassen mit variierenden Oberflächenmerkmalen.
+\subsection{Verbesserungspotential}
+Statt spezifische Folgearbeiten zu skizzieren, fassen wir pragmatisch umsetzbare
+Verbesserungsmaßnahmen zusammen, die aus den vorliegenden Ergebnissen
+ableitbar sind:
+\begin{itemize}
+    \item Zielgerichtete Augmentation: Erweiterte Photometrie (Helligkeit,
+          Kontrast, Farbrauschen) und stärkere Zoom-Variationen für schwer
+          unterscheidbare Klassen (z. B. \emph{ferry\_terminal}/\emph{harbor}).
+    \item Klassenausgleich: Gewichtete Verlustfunktionen oder Oversampling für
+          unterrepräsentierte Klassen zur Reduktion systematischer Fehler.
+    \item Effizienzorientierte Architektur-Anpassungen: Reduktion von
+          Parametern bzw. Einsatz effizienterer Konvolutionsblöcke, da
+          komplexere Varianten (z. B. V2) keinen proportionalen Accuracy-Gewinn
+          lieferten.
+    \item Interpretierbarkeit: Grad-CAM-Analysen zur Identifikation relevanter
+          Bildbereiche, um daten- oder architekturseitige Maßnahmen gezielt zu
+          planen.
+\end{itemize}
 
 \subsection{Limitationen}
-Die hier präsentierten Ergebnisse sind durch die Größe und Beschaffenheit des
-PatternNet-Datensatzes limitiert. Insbesondere mögliche Klassendisbalancen und die
-feste Crop-Größe ($256\times256$) beeinflussen die Resultate. Des Weiteren fehlen in
-dieser Studie Untersuchungen zu Hyperparameter-Sensitivitäten (z. B. Lernratenpläne, Batch-Größe,
-Optimierer-Varianten), die zukünftige Arbeiten ergänzen sollten.
-
-\subsection{Empfehlungen für zukünftige Arbeiten}
-Basierend auf den beobachteten Trends empfehlen wir:
-\begin{itemize}
-    \item Systematische Hyperparameter-Suche (LR-Scheduling, Weight Decay) mittels
-          Bayes-Optimierung oder Random Search.
-    \item Erweiterte Augmentation (MixUp, CutMix, starke Photometrie) und gezielte
-          Aufbereitung unterrepräsentierter Klassen.
-    \item Ensemble-Methoden über heterogene Architekturen zur Verbesserung der
-          Robustheit.
-    \item Analyse der Modellinterpretierbarkeit (Grad-CAM o.Ä.), um Fehlerursachen
-          auf Pixelebene zu identifizieren.
-\end{itemize}
+Die Ergebnisse sind durch die begrenzte, aber weiterhin balancierte
+Stichprobe des PatternNet-Datensatzes eingeschränkt. Die verwendete
+geometrische Augmentation erhöht zwar die Varianz der Trainingsdaten, ersetzt
+aber keine gezielte Behandlung stark skalierungsabhängiger oder sehr kleiner
+Objekte. Unsere Experimente zielten auf einen fairen Architekturvergleich
+unter identischen Trainingsbedingungen; umfassende Hyperparameter-Sweeps
+wurden nicht durchgeführt und sind nicht Bestandteil dieser Auswertung.
