@@ -11,14 +11,14 @@ import matplotlib.pyplot as plt
 import io
 from sklearn.metrics import confusion_matrix
 
-from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, Dropout_Net, BatchNorm_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net
+from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, Dropout_Net, BatchNorm_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net, TransferNet
 from Dataset import ImageFolderDataset
 
 NUM_EPOCHS = 15
 BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/PatternNet_Images")
-NET_CLASS = BatchNorm_Dense_Pool_Conv_Dropout_V2_Net
+NET_CLASS = TransferNet
 TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
@@ -217,7 +217,6 @@ def train_and_validate(train_dataloader, val_dataloader, network, writer):
 
         print(
             f"Epoch {epoch + 1}/{NUM_EPOCHS} | Train Loss: {epoch_loss:.4f} | "
-            f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
             f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
         )
     print('Finished Training')

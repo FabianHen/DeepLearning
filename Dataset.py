@@ -6,7 +6,7 @@ import torch
 
 
 IMAGE_EXTENSIONS = {".jpg"}
-SAMPLES_PER_CLASS = 100
+SAMPLES_PER_CLASS = 400
 SAMPLE_SELECTION_SEED = 42
 
 
@@ -43,7 +43,8 @@ class ImageFolderDataset(torch.utils.data.Dataset):
             if SAMPLES_PER_CLASS is not None and len(class_samples) > SAMPLES_PER_CLASS:
                 # Reproducible random subset to avoid bias from lexicographic first-N sampling.
                 class_rng = random.Random(SAMPLE_SELECTION_SEED + class_index)
-                class_samples = class_rng.sample(class_samples, SAMPLES_PER_CLASS)
+                class_samples = class_rng.sample(
+                    class_samples, SAMPLES_PER_CLASS)
                 class_samples.sort(key=lambda item: str(item[0]))
 
             samples.extend(class_samples)
