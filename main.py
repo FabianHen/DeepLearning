@@ -73,6 +73,7 @@ device = torch.device(
 
 
 def main():
+    """Run the full training, validation, and test pipeline."""
     train_dataloader, val_dataloader, test_dataloader = get_data_loaders()
 
     network = NET_CLASS().to(device)
@@ -86,10 +87,12 @@ def main():
 
 
 def _dataset_paths(dataset):
+    """Return the resolved file paths contained in a dataset."""
     return {str(path.resolve()) for path, _ in dataset.samples}
 
 
 def _label_counts(dataset):
+    """Count the number of samples per class in a dataset."""
     counts = np.zeros(len(CLASSES), dtype=int)
     for _, label in dataset.samples:
         counts[label] += 1
@@ -97,6 +100,7 @@ def _label_counts(dataset):
 
 
 def validate_split_integrity(trainset, valset, testset):
+    """Check that the train/validation/test splits do not overlap."""
     train_paths = _dataset_paths(trainset)
     val_paths = _dataset_paths(valset)
     test_paths = _dataset_paths(testset)
@@ -120,9 +124,9 @@ def validate_split_integrity(trainset, valset, testset):
         )
 
 
-# Function to create dataloaders for training, validation, and testing
 def get_data_loaders():
-    # Define transformations for training and evaluation
+    """Build transformed train, validation, and test dataloaders."""
+
     train_transform = transforms.Compose([
         transforms.RandomResizedCrop(256, scale=(0.8, 1.0)),
         transforms.RandomHorizontalFlip(),
@@ -132,12 +136,13 @@ def get_data_loaders():
         transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
     ])
 
+    # Keep evaluation deterministic and free from augmentation.
     eval_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
     ])
 
-    # Create base dataset and split it deterministically per class
+    # Build the base dataset once, then split it deterministically per class.
     full_dataset = ImageFolderDataset(DATA_ROOT)
     trainset, valset, testset = full_dataset.stratified_split(
         TRAIN_RATIO,
@@ -151,7 +156,7 @@ def get_data_loaders():
 
     validate_split_integrity(trainset, valset, testset)
 
-    # Create dataloaders
+    # Enable shuffling only for training; evaluation keeps a fixed order.
     train_dataloader = torch.utils.data.DataLoader(
         trainset,
         batch_size=BATCH_SIZE,
@@ -182,8 +187,8 @@ def get_data_loaders():
     return train_dataloader, val_dataloader, test_dataloader
 
 
-# Training function to train the model and validate after each epoch
 def train_and_validate(train_dataloader, val_dataloader, network, writer):
+    """Train the network and validate it after every epoch."""
 
     optimizer = torch.optim.Adam(network.parameters())
     loss_function = torch.nn.CrossEntropyLoss()
@@ -206,6 +211,8 @@ def train_and_validate(train_dataloader, val_dataloader, network, writer):
             running_loss += loss.item()
 
         epoch_loss = running_loss / len(train_dataloader)
+        # Validation returns both scalar metrics and full predictions for the
+        # confusion matrix.
         val_epoch_loss, val_accuracy, all_targets, all_preds = validate(
             val_dataloader, network, loss_function)
 
@@ -223,6 +230,7 @@ def train_and_validate(train_dataloader, val_dataloader, network, writer):
 
 
 def log_sample_images(writer, train_dataloader):
+    """Log a small grid of training samples and their labels to TensorBoard."""
     images, labels = next(iter(train_dataloader))
     images = images[:16].clone()
     labels = labels[:16]
@@ -242,8 +250,8 @@ def log_sample_images(writer, train_dataloader):
         pass
 
 
-# Validation function to evaluate the model on the validation set
 def validate(val_dataloader, network, loss_function):
+    """Evaluate the model on the validation split."""
     network.eval()
     val_running_loss = 0.0
     correct_predictions = 0
@@ -274,6 +282,7 @@ def validate(val_dataloader, network, loss_function):
 
 
 def plot_confusion_matrix(cm, class_names):
+    """Render a confusion matrix figure for TensorBoard logging."""
     fig, ax = plt.subplots(figsize=(32, 32))
     im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     ax.set_title('Confusion matrix')
@@ -295,6 +304,7 @@ def plot_confusion_matrix(cm, class_names):
 
 
 def log_confusion_matrix(writer, targets, preds, epoch):
+    """Convert the current validation predictions into a TensorBoard image."""
     cm = confusion_matrix(targets, preds)
     fig = plot_confusion_matrix(cm, CLASSES)
     buf = io.BytesIO()
@@ -306,8 +316,8 @@ def log_confusion_matrix(writer, targets, preds, epoch):
     writer.add_image('ConfusionMatrix', im, epoch)
 
 
-# Test function to evaluate the model on the test set
 def test(test_dataloader, network):
+    """Evaluate the final model on the held-out test split."""
     network.eval()
     correct = 0
     total = 0

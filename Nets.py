@@ -6,8 +6,10 @@ NUM_CLASSES = 38
 
 
 class Base_Net(nn.Module):
-    # define layer
+    """Baseline convolutional classifier with a small fully connected head."""
+
     def __init__(self):
+        """Initialize the baseline convolutional network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -24,11 +26,10 @@ class Base_Net(nn.Module):
         # Linear -> fully connected
         self.fc1 = nn.Linear(16*32*32, 128)
         self.fc2 = nn.Linear(128, 128)
-        # self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass through the baseline network."""
         x = nn.functional.relu(self.conv1(x))
         x = nn.functional.relu(self.conv2(x))
         x = self.pool(x)
@@ -46,8 +47,10 @@ class Base_Net(nn.Module):
 
 
 class Conv_Net(nn.Module):
-    # define layer
+    """Pure convolutional feature extractor followed by a dense classifier."""
+
     def __init__(self):
+        """Initialize the deeper convolutional network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -69,11 +72,10 @@ class Conv_Net(nn.Module):
         # Linear -> fully connected
         self.fc1 = nn.Linear(16*64*64, 128)
         self.fc2 = nn.Linear(128, 128)
-        # self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass through the convolutional-only model."""
         x = nn.functional.relu(self.conv1(x))
         x = nn.functional.relu(self.conv2(x))
         x = nn.functional.relu(self.conv3(x))
@@ -93,8 +95,10 @@ class Conv_Net(nn.Module):
 
 
 class Dense_Net(nn.Module):
-    # define layer
+    """Convolutional stem with a deeper fully connected classifier head."""
+
     def __init__(self):
+        """Initialize the dense-head network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -114,11 +118,10 @@ class Dense_Net(nn.Module):
         self.fc4 = nn.Linear(128, 128)
         self.fc5 = nn.Linear(128, 128)
         self.fc6 = nn.Linear(128, 128)
-        # self.fc2 = nn.Linear(120, 84)
         self.fc7 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass through the dense classifier."""
         x = nn.functional.relu(self.conv1(x))
         x = nn.functional.relu(self.conv2(x))
         x = self.pool(x)
@@ -139,8 +142,10 @@ class Dense_Net(nn.Module):
 
 
 class Pooling_Net(nn.Module):
-    # define layer
+    """Network variant that applies pooling after nearly every convolution."""
+
     def __init__(self):
+        """Initialize the pooling-heavy network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -156,11 +161,10 @@ class Pooling_Net(nn.Module):
         # Linear -> fully connected
         self.fc1 = nn.Linear(16*16*16, 128)
         self.fc2 = nn.Linear(128, 128)
-        # self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass through the pooling-heavy architecture."""
         x = nn.functional.relu(self.conv1(x))
         x = self.pool(x)
         x = nn.functional.relu(self.conv2(x))
@@ -179,8 +183,10 @@ class Pooling_Net(nn.Module):
 
 
 class Dropout_Net(nn.Module):
-    # define layer
+    """Convolutional classifier with dropout regularization in the head."""
+
     def __init__(self):
+        """Initialize the dropout-regularized network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -200,11 +206,10 @@ class Dropout_Net(nn.Module):
         # Linear -> fully connected
         self.fc1 = nn.Linear(16*64*64, 128)
         self.fc2 = nn.Linear(128, 128)
-        # self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass with dropout applied in the dense head."""
         x = nn.functional.relu(self.conv1(x))
         x = nn.functional.relu(self.conv2(x))
         x = self.pool(x)
@@ -222,8 +227,10 @@ class Dropout_Net(nn.Module):
 
 
 class BatchNorm_Net(nn.Module):
-    # define layer
+    """Convolutional classifier that uses batch normalization throughout."""
+
     def __init__(self):
+        """Initialize the batch-normalized network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -250,8 +257,8 @@ class BatchNorm_Net(nn.Module):
         self.bn_fc2 = nn.BatchNorm1d(128)
         self.fc3 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass with batch normalization in each block."""
         x = nn.functional.relu(self.bn1(self.conv1(x)))
         x = nn.functional.relu(self.bn2(self.conv2(x)))
         x = self.pool(x)
@@ -268,8 +275,10 @@ class BatchNorm_Net(nn.Module):
 
 
 class BatchNorm_Dense_Pool_Net(nn.Module):
-    # define layer
+    """Batch-normalized network with pooled convolutional blocks and dense head."""
+
     def __init__(self):
+        """Initialize the pooled and dense batch-normalized network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -298,8 +307,8 @@ class BatchNorm_Dense_Pool_Net(nn.Module):
         self.bn_fc3 = nn.BatchNorm1d(128)
         self.fc4 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass through the pooled BN architecture."""
         x = nn.functional.relu(self.bn1(self.conv1(x)))
         x = nn.functional.relu(self.bn2(self.conv2(x)))
         x = self.pool(x)
@@ -318,8 +327,10 @@ class BatchNorm_Dense_Pool_Net(nn.Module):
 
 
 class BatchNorm_Dense_Pool_Conv_Net(nn.Module):
-    # define layer
+    """Batch-normalized variant that keeps one extra convolutional block."""
+
     def __init__(self):
+        """Initialize the extended batch-normalized network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -351,8 +362,8 @@ class BatchNorm_Dense_Pool_Conv_Net(nn.Module):
         self.bn_fc3 = nn.BatchNorm1d(128)
         self.fc4 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass through the extended BN convolutional model."""
         x = nn.functional.relu(self.bn1(self.conv1(x)))
         x = nn.functional.relu(self.bn2(self.conv2(x)))
         x = self.pool(x)
@@ -372,8 +383,10 @@ class BatchNorm_Dense_Pool_Conv_Net(nn.Module):
 
 
 class BatchNorm_Dense_Pool_Conv_Dropout_Net(nn.Module):
-    # define layer
+    """Batch-normalized network with pooling, an extra conv block, and dropout."""
+
     def __init__(self):
+        """Initialize the batch-normalized dropout network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -407,8 +420,8 @@ class BatchNorm_Dense_Pool_Conv_Dropout_Net(nn.Module):
         self.bn_fc3 = nn.BatchNorm1d(128)
         self.fc4 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass with batch normalization and dropout."""
         x = nn.functional.relu(self.bn1(self.conv1(x)))
         x = nn.functional.relu(self.bn2(self.conv2(x)))
         x = self.pool(x)
@@ -429,8 +442,10 @@ class BatchNorm_Dense_Pool_Conv_Dropout_Net(nn.Module):
 
 
 class BatchNorm_Dense_Pool_Conv_Dropout_V2_Net(nn.Module):
-    # define layer
+    """Wider batch-normalized dropout network with a larger convolutional stem."""
+
     def __init__(self):
+        """Initialize the wider V2 batch-normalized dropout network."""
         super().__init__()
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=64, kernel_size=3, padding=1)
@@ -464,8 +479,8 @@ class BatchNorm_Dense_Pool_Conv_Dropout_V2_Net(nn.Module):
         self.bn_fc3 = nn.BatchNorm1d(128)
         self.fc4 = nn.Linear(128, NUM_CLASSES)
 
-    # define data flow / architecture
     def forward(self, x):
+        """Run a forward pass through the wider V2 architecture."""
         x = nn.functional.relu(self.bn1(self.conv1(x)))
         x = nn.functional.relu(self.bn2(self.conv2(x)))
         x = self.pool(x)
@@ -486,12 +501,15 @@ class BatchNorm_Dense_Pool_Conv_Dropout_V2_Net(nn.Module):
 
 
 class TransferNet(nn.Module):
+    """Transfer learning model based on a pretrained ResNet-50 backbone."""
 
     def __init__(self):
+        """Initialize the pretrained ResNet-50 classifier head."""
         super().__init__()
 
         self.model = resnet50(weights=ResNet50_Weights.DEFAULT)
 
+        # Freeze the full backbone first, then unfreeze only the last block.
         for param in self.model.parameters():
             param.requires_grad = False
 
@@ -503,4 +521,5 @@ class TransferNet(nn.Module):
         self.model.fc = nn.Linear(in_features, NUM_CLASSES)
 
     def forward(self, x):
+        """Run a forward pass through the fine-tuned ResNet-50 model."""
         return self.model(x)
