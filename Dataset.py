@@ -11,7 +11,21 @@ SAMPLE_SELECTION_SEED = 42
 
 
 class ImageFolderDataset(torch.utils.data.Dataset):
+    """Dataset wrapper that loads class-organized images from a directory tree.
+
+    The dataset scans one subdirectory per class, stores `(image_path, label)`
+    pairs, and optionally applies a transform when samples are fetched.
+    """
+
     def __init__(self, image_root: Path, transform=None, samples=None, class_to_idx=None):
+        """Create a dataset from an image root folder.
+
+        Args:
+            image_root: Root directory that contains one folder per class.
+            transform: Optional torchvision transform applied to every image.
+            samples: Optional precomputed `(path, label)` list for subsets.
+            class_to_idx: Optional mapping that fixes the class ordering.
+        """
         self.image_root = Path(image_root)
         self.transform = transform
 
@@ -28,6 +42,11 @@ class ImageFolderDataset(torch.utils.data.Dataset):
         self.samples = samples if samples is not None else self._scan_samples()
 
     def _scan_samples(self):
+        """Collect image paths for every class folder.
+
+        Returns:
+            A list of `(image_path, class_index)` tuples.
+        """
         samples = []
         for class_name, class_index in self.class_to_idx.items():
             class_dir = self.image_root / class_name
@@ -41,7 +60,7 @@ class ImageFolderDataset(torch.utils.data.Dataset):
 
             # Limit samples per class if specified
             if SAMPLES_PER_CLASS is not None and len(class_samples) > SAMPLES_PER_CLASS:
-                # Reproducible random subset to avoid bias from lexicographic first-N sampling.
+                # Use a reproducible random subset to avoid lexicographic sampling bias.
                 class_rng = random.Random(SAMPLE_SELECTION_SEED + class_index)
                 class_samples = class_rng.sample(
                     class_samples, SAMPLES_PER_CLASS)
@@ -55,6 +74,15 @@ class ImageFolderDataset(torch.utils.data.Dataset):
         return samples
 
     def subset(self, indices, transform=None):
+        """Create a dataset subset from the given sample indices.
+
+        Args:
+            indices: Indices into the current dataset samples.
+            transform: Optional override transform for the returned subset.
+
+        Returns:
+            A new `ImageFolderDataset` backed by the selected samples.
+        """
         subset_samples = [self.samples[index] for index in indices]
         return ImageFolderDataset(
             self.image_root,
@@ -73,6 +101,11 @@ class ImageFolderDataset(torch.utils.data.Dataset):
         val_transform=None,
         test_transform=None,
     ):
+        """Split the dataset into train, validation, and test subsets.
+
+        The split is performed per class so each subset preserves the class
+        distribution as closely as possible.
+        """
         if not torch.isclose(
             torch.tensor(train_ratio + val_ratio +
                          test_ratio, dtype=torch.float32),
@@ -118,9 +151,11 @@ class ImageFolderDataset(torch.utils.data.Dataset):
         )
 
     def __len__(self):
+        """Return the number of samples in the dataset."""
         return len(self.samples)
 
     def __getitem__(self, index):
+        """Load and return a single image-label pair."""
         image_path, label = self.samples[index]
         image = Image.open(image_path).convert("RGB")
 
