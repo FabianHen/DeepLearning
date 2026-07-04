@@ -217,9 +217,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-images/
 .DS_Store
-runs/
 
 *.aux
 *.bak
@@ -231,3 +229,8 @@ runs/
 *.synctex.gz
 *.fdb_latexmk
 *.pdf
+
+# Custom folders
+images/
+checkpoints/
+runs/
