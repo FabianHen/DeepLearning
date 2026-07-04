@@ -23,7 +23,7 @@ NET_CLASS = Student_Net
 TEACHER_CLASS = TransferNet
 TEACHER_CHECKPOINT = CHECKPOINT_DIR / f"{TEACHER_CLASS.__name__}.pth"
 DISTILL_TEMPERATURE = 4.0
-DISTILL_ALPHA = 0.3
+DISTILL_ALPHA = 0.2
 TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
@@ -277,7 +277,9 @@ def distillation_loss(student_logits, teacher_logits, labels, temperature, alpha
         torch.nn.functional.softmax(teacher_logits / temperature, dim=1),
         reduction="batchmean",
     )
-    return alpha * student_loss + (1 - alpha) * soft_distillation_loss
+    # Scale by T^2 so the soft-target gradient magnitude doesn't shrink as
+    # temperature increases (Hinton et al., 2015).
+    return alpha * student_loss + (1 - alpha) * (temperature ** 2) * soft_distillation_loss
 
 
 def train_and_validate_distillation(train_dataloader, val_dataloader, teacher, student, writer,

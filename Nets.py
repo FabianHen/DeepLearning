@@ -535,9 +535,14 @@ class Student_Net(nn.Module):
         self.conv2 = nn.Conv2d(
             in_channels=32, out_channels=32, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(
-            in_channels=32, out_channels=32, kernel_size=3, padding=1)
+            in_channels=32, out_channels=16, kernel_size=3, padding=1)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.global_avg_pool = nn.AdaptiveAvgPool2d((32, 32))
+
+        self.bn1 = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.bn3 = nn.BatchNorm2d(16)
+
         # Linear -> fully connected
         self.fc1 = nn.Linear(16*32*32, 128)
         self.fc2 = nn.Linear(128, 128)
@@ -545,11 +550,11 @@ class Student_Net(nn.Module):
 
     def forward(self, x):
         """Run a forward pass through the baseline network."""
-        x = nn.functional.relu(self.conv1(x))
+        x = nn.functional.relu(self.bn1(self.conv1(x)))
         x = self.pool(x)
-        x = nn.functional.relu(self.conv2(x))
+        x = nn.functional.relu(self.bn2(self.conv2(x)))
         x = self.pool(x)
-        x = nn.functional.relu(self.conv3(x))
+        x = nn.functional.relu(self.bn3(self.conv3(x)))
         x = self.global_avg_pool(x)
 
         x = torch.flatten(x, 1)  # flatten all dimensions except batch
