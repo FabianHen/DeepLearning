@@ -18,6 +18,7 @@ NUM_EPOCHS = 15
 BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/PatternNet_Images")
+CHECKPOINT_DIR = Path("checkpoints")
 NET_CLASS = TransferNet
 TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
@@ -81,6 +82,7 @@ def main():
 
     writer = SummaryWriter(f"runs/{NET_CLASS.__name__}")
     train_and_validate(train_dataloader, val_dataloader, network, writer)
+    save_model(network)
     test_accuracy = test(test_dataloader, network)
     writer.add_scalar("Accuracy/test", test_accuracy)
     writer.close()
@@ -227,6 +229,14 @@ def train_and_validate(train_dataloader, val_dataloader, network, writer):
             f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
         )
     print('Finished Training')
+
+
+def save_model(network):
+    """Save the trained network's weights to the checkpoint directory."""
+    CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = CHECKPOINT_DIR / f"{NET_CLASS.__name__}.pth"
+    torch.save(network.state_dict(), checkpoint_path)
+    print(f"Saved model weights to {checkpoint_path}")
 
 
 def log_sample_images(writer, train_dataloader):
