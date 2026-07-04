@@ -523,3 +523,37 @@ class TransferNet(nn.Module):
     def forward(self, x):
         """Run a forward pass through the fine-tuned ResNet-50 model."""
         return self.model(x)
+
+class Student_Net(nn.Module):
+    """Student model for knowledge distillation."""
+
+    def __init__(self):
+        """Initialize the student model."""
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+            in_channels=3, out_channels=32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(
+            in_channels=32, out_channels=32, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(
+            in_channels=32, out_channels=32, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((32, 32))
+        # Linear -> fully connected
+        self.fc1 = nn.Linear(16*32*32, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, NUM_CLASSES)
+
+    def forward(self, x):
+        """Run a forward pass through the baseline network."""
+        x = nn.functional.relu(self.conv1(x))
+        x = self.pool(x)
+        x = nn.functional.relu(self.conv2(x))
+        x = self.pool(x)
+        x = nn.functional.relu(self.conv3(x))
+        x = self.global_avg_pool(x)
+
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = nn.functional.relu(self.fc1(x))
+        x = nn.functional.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x

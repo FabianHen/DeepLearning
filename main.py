@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import io
 from sklearn.metrics import confusion_matrix
 
-from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, Dropout_Net, BatchNorm_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net, TransferNet
+from Nets import Base_Net, Dense_Net, Conv_Net, Pooling_Net, Dropout_Net, BatchNorm_Net, BatchNorm_Dense_Pool_Net, BatchNorm_Dense_Pool_Conv_Net, BatchNorm_Dense_Pool_Conv_Dropout_Net, BatchNorm_Dense_Pool_Conv_Dropout_V2_Net, TransferNet, Student_Net
 from Dataset import ImageFolderDataset
 
 NUM_EPOCHS = 15
@@ -19,7 +19,11 @@ BATCH_SIZE = 64
 NUM_WORKERS = 4
 DATA_ROOT = Path("images/PatternNet_Images")
 CHECKPOINT_DIR = Path("checkpoints")
-NET_CLASS = TransferNet
+NET_CLASS = Student_Net
+TEACHER_CLASS = TransferNet
+TEACHER_CHECKPOINT = CHECKPOINT_DIR / f"{TEACHER_CLASS.__name__}.pth"
+DISTILL_TEMPERATURE = 4.0
+DISTILL_ALPHA = 0.3
 TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
@@ -84,6 +88,21 @@ def main():
     train_and_validate(train_dataloader, val_dataloader, network, writer)
     save_model(network)
     test_accuracy = test(test_dataloader, network)
+    writer.add_scalar("Accuracy/test", test_accuracy)
+    writer.close()
+
+
+def distill_main():
+    """Train the student network via knowledge distillation from the pretrained teacher."""
+    train_dataloader, val_dataloader, test_dataloader = get_data_loaders()
+
+    teacher = load_teacher()
+    student = NET_CLASS().to(device)
+    torchinfo.summary(student, input_size=(1, 3, 256, 256), device=device)
+
+    writer = SummaryWriter(f"runs/{NET_CLASS.__name__}_distilled")
+    train_and_validate_distillation(train_dataloader, val_dataloader, teacher, student, writer)
+    test_accuracy = test(test_dataloader, student)
     writer.add_scalar("Accuracy/test", test_accuracy)
     writer.close()
 
@@ -231,12 +250,78 @@ def train_and_validate(train_dataloader, val_dataloader, network, writer):
     print('Finished Training')
 
 
-def save_model(network):
+def save_model(network, name=None):
     """Save the trained network's weights to the checkpoint directory."""
+    name = name or NET_CLASS.__name__
     CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = CHECKPOINT_DIR / f"{NET_CLASS.__name__}.pth"
+    checkpoint_path = CHECKPOINT_DIR / f"{name}.pth"
     torch.save(network.state_dict(), checkpoint_path)
     print(f"Saved model weights to {checkpoint_path}")
+
+
+def load_teacher():
+    """Load the pretrained teacher network and freeze it for inference only."""
+    teacher = TEACHER_CLASS().to(device)
+    teacher.load_state_dict(torch.load(TEACHER_CHECKPOINT, map_location=device))
+    teacher.eval()
+    for param in teacher.parameters():
+        param.requires_grad = False
+    return teacher
+
+
+def distillation_loss(student_logits, teacher_logits, labels, temperature, alpha):
+    """Combine hard-label cross-entropy with soft-target KL-divergence distillation loss."""
+    student_loss = torch.nn.functional.cross_entropy(student_logits, labels)
+    soft_distillation_loss = torch.nn.functional.kl_div(
+        torch.nn.functional.log_softmax(student_logits / temperature, dim=1),
+        torch.nn.functional.softmax(teacher_logits / temperature, dim=1),
+        reduction="batchmean",
+    )
+    return alpha * student_loss + (1 - alpha) * soft_distillation_loss
+
+
+def train_and_validate_distillation(train_dataloader, val_dataloader, teacher, student, writer,
+                                     temperature=DISTILL_TEMPERATURE, alpha=DISTILL_ALPHA):
+    """Train the student network via knowledge distillation from the frozen teacher."""
+
+    optimizer = torch.optim.Adam(student.parameters())
+    val_loss_function = torch.nn.CrossEntropyLoss()
+
+    log_sample_images(writer, train_dataloader)
+
+    for epoch in range(NUM_EPOCHS):
+        student.train()
+        running_loss = 0.0
+
+        for inputs, labels in tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{NUM_EPOCHS} Distillation Training"):
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            with torch.no_grad():
+                teacher_logits = teacher(inputs)
+
+            optimizer.zero_grad()
+            student_logits = student(inputs)
+            loss = distillation_loss(student_logits, teacher_logits, labels, temperature, alpha)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+
+        epoch_loss = running_loss / len(train_dataloader)
+        val_epoch_loss, val_accuracy, all_targets, all_preds = validate(
+            val_dataloader, student, val_loss_function)
+
+        writer.add_scalar("Loss/train", epoch_loss, epoch)
+        writer.add_scalar("Loss/val", val_epoch_loss, epoch)
+        writer.add_scalar("Accuracy/val", val_accuracy, epoch)
+
+        log_confusion_matrix(writer, all_targets, all_preds, epoch)
+
+        print(
+            f"Epoch {epoch + 1}/{NUM_EPOCHS} | Train Loss: {epoch_loss:.4f} | "
+            f"Val Loss: {val_epoch_loss:.4f} | Val Acc: {val_accuracy:.2f}%"
+        )
+    print('Finished Distillation Training')
 
 
 def log_sample_images(writer, train_dataloader):
@@ -345,4 +430,5 @@ def test(test_dataloader, network):
 
 
 if __name__ == "__main__":
-    main()
+    # main()  # pretrain the teacher (TransferNet) and save its checkpoint
+    distill_main()  # train the student via knowledge distillation
