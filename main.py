@@ -233,8 +233,6 @@ def train_and_validate(train_dataloader, val_dataloader, network, writer):
             running_loss += loss.item()
 
         epoch_loss = running_loss / len(train_dataloader)
-        # Validation returns both scalar metrics and full predictions for the
-        # confusion matrix.
         val_epoch_loss, val_accuracy, all_targets, all_preds = validate(
             val_dataloader, network, loss_function)
 
@@ -279,8 +277,6 @@ def distillation_loss(student_logits, teacher_logits, labels, temperature, alpha
         torch.nn.functional.softmax(teacher_logits / temperature, dim=1),
         reduction="batchmean",
     )
-    # Scale by T^2 so the soft-target gradient magnitude doesn't shrink as
-    # temperature increases (Hinton et al., 2015).
     return alpha * student_loss + (1 - alpha) * (temperature ** 2) * soft_distillation_loss
 
 
