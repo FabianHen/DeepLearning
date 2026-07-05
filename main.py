@@ -22,7 +22,7 @@ CHECKPOINT_DIR = Path("checkpoints")
 NET_CLASS = Student_Net
 TEACHER_CLASS = TransferNet
 TEACHER_CHECKPOINT = CHECKPOINT_DIR / f"{TEACHER_CLASS.__name__}.pth"
-DISTILL_TEMPERATURE = 4.0
+DISTILL_TEMPERATURE = 5.0
 DISTILL_ALPHA = 0.2
 TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
@@ -101,7 +101,8 @@ def distill_main():
     torchinfo.summary(student, input_size=(1, 3, 256, 256), device=device)
 
     writer = SummaryWriter(f"runs/{NET_CLASS.__name__}_distilled")
-    train_and_validate_distillation(train_dataloader, val_dataloader, teacher, student, writer)
+    train_and_validate_distillation(
+        train_dataloader, val_dataloader, teacher, student, writer)
     test_accuracy = test(test_dataloader, student)
     writer.add_scalar("Accuracy/test", test_accuracy)
     writer.close()
@@ -262,7 +263,8 @@ def save_model(network, name=None):
 def load_teacher():
     """Load the pretrained teacher network and freeze it for inference only."""
     teacher = TEACHER_CLASS().to(device)
-    teacher.load_state_dict(torch.load(TEACHER_CHECKPOINT, map_location=device))
+    teacher.load_state_dict(torch.load(
+        TEACHER_CHECKPOINT, map_location=device))
     teacher.eval()
     for param in teacher.parameters():
         param.requires_grad = False
@@ -283,7 +285,7 @@ def distillation_loss(student_logits, teacher_logits, labels, temperature, alpha
 
 
 def train_and_validate_distillation(train_dataloader, val_dataloader, teacher, student, writer,
-                                     temperature=DISTILL_TEMPERATURE, alpha=DISTILL_ALPHA):
+                                    temperature=DISTILL_TEMPERATURE, alpha=DISTILL_ALPHA):
     """Train the student network via knowledge distillation from the frozen teacher."""
 
     optimizer = torch.optim.Adam(student.parameters())
@@ -304,7 +306,8 @@ def train_and_validate_distillation(train_dataloader, val_dataloader, teacher, s
 
             optimizer.zero_grad()
             student_logits = student(inputs)
-            loss = distillation_loss(student_logits, teacher_logits, labels, temperature, alpha)
+            loss = distillation_loss(
+                student_logits, teacher_logits, labels, temperature, alpha)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
