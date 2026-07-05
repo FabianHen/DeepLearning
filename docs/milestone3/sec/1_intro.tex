@@ -1,27 +1,37 @@
 \section{Einleitung}
 \label{sec:einleitung}
- 
+
 % --- 1.1 Motivation ---
 \subsection{Motivation und Problemstellung}
 \label{subsec:motivation}
- 
+
 Die Klassifikation von Fernerkundungsbildern beschäftigt sich mit der Frage, welche Landnutzungs- oder Landbedeckungsklasse eine gegebene Bildszene repräsentiert.
 Dies ist von hoher praktischer Relevanz, da Satelliten- und Luftbilder in immer größerem Umfang verfügbar werden und eine manuelle Auswertung dieser Datenmengen weder zeitlich noch wirtschaftlich realisierbar ist.
 Automatisierte Verfahren sind daher unerlässlich, um beispielsweise Veränderungen in der Landnutzung zu erkennen, landwirtschaftliche Flächen zu überwachen oder Katastrophenschäden zu identifizieren.
- 
+Neben einer hohen Klassifikationsgenauigkeit spielen dabei auch Modellgröße, Inferenzzeit und Speicherbedarf eine wichtige Rolle, wenn Verfahren später effizient eingesetzt werden sollen.
+
 % --- 1.2 Zielsetzung ---
 \subsection{Zielsetzung der Arbeit}
 \label{subsec:zielsetzung}
- 
-Ziel dieser Arbeit ist es, eine eigene CNN-Architektur zu entwerfen und zu trainieren, die Bilder des PatternNet-Datensatzes möglichst genau in die 38 vorgegebenen Szenenklassen klassifiziert.
-Im Vordergrund steht dabei nicht die Anwendung einer vortrainierten Standardarchitektur, sondern der eigenständige Entwurfsprozess: die systematische Auswahl von Schichten und anderen Parametern sowie die Analyse ihres Einflusses auf die Klassifikationsleistung.
+
+Ziel dieser Arbeit ist es, auf einer bereits vorhandenen CNN-Basis aufzubauen und zu untersuchen, wie sich Knowledge Distillation zur Verbesserung und Komprimierung des Modells einsetzen lässt.
+Dazu wird ein leistungsfähiges Teacher-Modell als Referenz betrachtet und ein kleineres Student-Modell mithilfe von Distillation trainiert, sodass Wissen aus den Vorhersagen des Teachers auf das kompaktere Netz übertragen wird.
+Im Vordergrund steht damit nicht mehr der reine Architekturvergleich, sondern die Frage, ob sich mit Distillation ein gutes Verhältnis zwischen Klassifikationsleistung und Modellkomplexität erreichen lässt.
+
+Im Rahmen dieser Arbeit werden insbesondere folgende Fragen betrachtet:
+\begin{itemize}
+	\item Wie stark kann ein Student-Modell durch Knowledge Distillation gegenüber einem ohne Distillation trainierten Modell profitieren?
+	\item Welche Auswirkungen hat der Wissenstransfer auf Trainingsverlauf, Validierungsverhalten und Test-Accuracy?
+	\item Lässt sich die Modellgröße reduzieren, ohne die Klassifikationsleistung unverhältnismäßig zu verschlechtern?
+\end{itemize}
 
 % --- 1.3 Aufbau der Arbeit ---
 \subsection{Aufbau der Arbeit}
 \label{subsec:aufbau}
- 
+
 Der weitere Bericht ist wie folgt gegliedert:
-Abschnitt~\ref{sec:methode} beschreibt den verwendeten Datensatz, die Vorverarbeitung, die entwickelte Netzarchitektur sowie das Trainingsverfahren.
-	In Abschnitt~\ref{sec:ergebnisse} werden die erzielten Ergebnisse anhand der gewählten Evaluationsmetriken präsentiert.
-	Abschnitt~\ref{sec:diskussion} diskutiert die Ergebnisse und identifiziert Stärken sowie Limitationen des gewählten Ansatzes.
-	Abschnitt~\ref{sec:fazit} fasst die Arbeit zusammen.
+Nach dieser Einleitung folgt in Abschnitt~\ref{sec:stand-der-forschung} der Stand der Forschung zu CNN-basierten Verfahren und Knowledge Distillation.
+Abschnitt~\ref{sec:methode} beschreibt die verwendete Datenbasis, die Vorverarbeitung sowie das Teacher-Student-Setup und das Distillationsverfahren.
+In Abschnitt~\ref{sec:ergebnisse} werden die erzielten Ergebnisse anhand der gewählten Evaluationsmetriken präsentiert.
+Abschnitt~\ref{sec:diskussion} diskutiert die Ergebnisse und identifiziert Stärken sowie Limitationen des gewählten Ansatzes.
+Abschnitt~\ref{sec:fazit} fasst die Arbeit zusammen.

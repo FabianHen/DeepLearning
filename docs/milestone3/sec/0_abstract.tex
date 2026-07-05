@@ -1,8 +1,8 @@
 \begin{abstract}
-    Die automatisierte Klassifikation von Fernerkundungsbildern ist ein zentrales Problem in der Geoinformatik und findet Anwendung in Bereichen wie der Landnutzungskartierung, Stadtplanung und Umweltüberwachung.
-    In dieser Arbeit werden zehn Convolutional-Neural-Network-Architekturen systematisch entworfen, trainiert und verglichen, um Szenen des PatternNet-Datensatzes in 38~Landnutzungsklassen einzuordnen.
-    Ausgehend von einem schlanken Basisnetzwerk werden schrittweise einzelne Komponenten, wie zusätzliche Convolution-Layer, aggressiveres Pooling, Dropout und Batch-Normalisierung, isoliert variiert, bevor die wirksamsten Techniken in kombinierte Architekturen integriert werden.
-    Alle Netze werden unter identischen Bedingungen trainiert (Adam-Optimizer, 15~Epochen, Batchgröße~64) und anhand der Klassifikationsgenauigkeit auf einem unabhängigen Testdatensatz bewertet.
-    Das leistungsfähigste Modell erreicht eine Test-Accuracy von \textbf{84.2\,\%}.
-    Die Ergebnisse zeigen, dass Batch-Normalisierung den größten Einzeleffekt auf die Klassifikationsleistung hat, während zusätzliche Faltungsschichten oder tiefere Klassifikationsköpfe allein nur marginale Verbesserungen erzielen, und verdeutlichen damit die Bedeutung einer gezielten Regularisierung gegenüber einer reinen Erhöhung der Netztiefe.
+    Die automatisierte Klassifikation von Fernerkundungsbildern ist ein zentrales Problem in der Geoinformatik und bildet die Grundlage für Anwendungen wie Landnutzungskartierung, Stadtplanung und Umweltmonitoring.
+    Aufbauend auf einer bereits untersuchten CNN-Baseline erweitert diese Arbeit den bisherigen Ansatz um Knowledge Distillation, um die Klassifikation von 38~PatternNet-Szenenklassen zu verbessern und zugleich ein kompakteres Modellverhalten zu untersuchen.
+    Dazu wird zunächst ein leistungsfähiges Teacher-Modell auf dem PatternNet-Datensatz trainiert und anschließend ein kleineres Student-Modell mittels Distillation an dessen Vorhersagen angepasst.
+    Die Modelle werden auf einer identischen Datenaufteilung unter vergleichbaren Trainingsbedingungen evaluiert und anhand von Validierungs- und Test-Accuracy sowie den Lernkurven miteinander verglichen.
+    Die Ergebnisse zeigen, dass der Wissenstransfer vom Teacher zum Student die Leistung eines kleineren Netzes anheben kann, ohne die Modellkomplexität unnötig zu erhöhen.
+    Insgesamt verdeutlicht die Arbeit, dass Knowledge Distillation einen sinnvollen Weg darstellt, um ein ausgewogenes Verhältnis zwischen Genauigkeit, Modellgröße und Trainingsaufwand zu erreichen.
 \end{abstract}

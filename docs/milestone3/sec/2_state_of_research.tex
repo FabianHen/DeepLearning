@@ -1,0 +1,13 @@
+\section{Stand der Forschung}
+\label{sec:stand-der-forschung}
+
+In der ersten Arbeit \cite{steidlehenssler2026milestone1} wurde eine Reihe von CNN-Architekturen für die Klassifikation von Szenen aus dem PatternNet-Datensatz untersucht.
+Dabei standen vor allem der systematische Vergleich verschiedener Modellvarianten sowie der Einfluss von Architekturelementen wie Batch-Normalisierung, Dropout, Pooling und der Tiefe des Netzes im Mittelpunkt.
+Die Ergebnisse dieser Vorarbeit lieferten eine belastbare CNN-Basis und zeigten, dass insbesondere batch-normalisierte Architekturen die beste Klassifikationsleistung erzielen.
+
+Die vorliegende Arbeit baut auf dieser Grundlage auf und erweitert den bisherigen Ansatz um Knowledge Distillation.
+Anstelle eines reinen Architekturvergleichs wird nun ein Teacher-Student-Setup betrachtet, in dem ein leistungsfähigeres Teacher-Modell Wissen an ein kompakteres Student-Modell überträgt.
+Zusätzlich zur klassischen Auswertung der Test-Accuracy wird damit auch untersucht, wie sich der Wissenstransfer auf das Lernverhalten und das Leistungsniveau eines kleineren Modells auswirkt.
+
+Im Vergleich zur ersten Arbeit liegt der zusätzliche Beitrag somit in der Distillation-Komponente selbst: Das Student-Modell soll nicht nur aus den harten Labels lernen, sondern auch von den weicheren Vorhersagen des Teachers profitieren.
+Damit verschiebt sich der Fokus von der Frage, welche CNN-Architektur allein am besten abschneidet, hin zu der Frage, wie sich eine bereits gute Modellbasis durch Knowledge Distillation weiter verbessern und effizienter machen lässt.
