@@ -40,15 +40,6 @@ Diese Normalisierung sorgt für eine zentrierte und skalierte Eingabeverteilung,
 
 Abbildung~\ref{fig:augmentation} zeigt exemplarisch zwei Grids von je 16~Trainingsbildern nach Anwendung der beschriebenen Augmentationstransformationen.
 Die zufälligen Rotationen und Spiegelungen sind an den gedrehten Bildrändern und den schwarzen Eckbereichen erkennbar.
- 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.48\linewidth]{figures/augmentation_sample_1.png}
-    \hfill
-    \includegraphics[width=0.48\linewidth]{figures/augmentation_sample_2.png}
-    \caption{Beispielhafte Trainingsbilder nach Anwendung der Datenaugmentation (zufälliges horizontales und vertikales Spiegeln, Rotation um bis zu $\pm 20^\circ$) und Normalisierung. Die schwarzen Eckbereiche entstehen durch die zufällige Rotation.}
-    \label{fig:augmentation}
-\end{figure}
 
 \subsection{Netzarchitektur}
 \label{subsec:architektur}
