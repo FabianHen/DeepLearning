@@ -25,16 +25,6 @@ Schwankungen einher. Diese Differenz spricht dafür, dass BatchNorm die
 Optimierung beschleunigt und das erreichbare Endniveau anhebt, zugleich jedoch
 die Kurven etwas volatiler macht.
 
-\begin{figure}[H]
-      \centering
-      \includegraphics[width=0.85\linewidth]{figures/CompareBestBase.png}
-      \caption{Vergleich der Validierungsverläufe von \emph{Base\_Net}
-            (rot) und \emph{BatchNorm\_Dense\_Pool\_Conv\_Net} (blau). Das
-            BatchNorm-Modell erreicht ein deutlich höheres Leistungsniveau, zeigt
-            aber stärkere epochale Schwankungen als das stabilere Basismodell.}
-      \label{fig:compare_best_base}
-\end{figure}
-
 In unseren Läufen war Overfitting allgemein wenig ausgeprägt: Trainings- und
 Validierungsverläufe divergierten nicht stark, was auf sinnvolle
 Regularisierung und die angewandten Augmentationsstrategien hindeutet.

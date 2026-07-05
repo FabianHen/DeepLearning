@@ -431,5 +431,5 @@ def test(test_dataloader, network):
 
 
 if __name__ == "__main__":
-    # main()  # pretrain the teacher (TransferNet) and save its checkpoint
-    distill_main()  # train the student via knowledge distillation
+    main()  # pretrain the teacher (TransferNet) and save its checkpoint
+    # distill_main()  # train the student via knowledge distillation
