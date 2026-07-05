@@ -86,7 +86,7 @@ def main():
 
     writer = SummaryWriter(f"runs/{NET_CLASS.__name__}")
     train_and_validate(train_dataloader, val_dataloader, network, writer)
-    save_model(network)
+    # save_model(network)
     test_accuracy = test(test_dataloader, network)
     writer.add_scalar("Accuracy/test", test_accuracy)
     writer.close()
@@ -432,5 +432,5 @@ def test(test_dataloader, network):
 
 
 if __name__ == "__main__":
-    # main()  # pretrain the teacher (TransferNet) and save its checkpoint
-    distill_main()  # train the student via knowledge distillation
+    main()  # pretrain the teacher (TransferNet) and save its checkpoint
+    # distill_main()  # train the student via knowledge distillation
