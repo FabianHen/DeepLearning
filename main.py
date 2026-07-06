@@ -302,6 +302,7 @@ def train_and_validate_distillation(train_dataloader, val_dataloader, teacher, s
 
             optimizer.zero_grad()
             student_logits = student(inputs)
+            # Compute the combined distillation loss using both hard labels and soft teacher outputs
             loss = distillation_loss(
                 student_logits, teacher_logits, labels, temperature, alpha)
             loss.backward()
@@ -431,5 +432,5 @@ def test(test_dataloader, network):
 
 
 if __name__ == "__main__":
-    main()  # pretrain the teacher (TransferNet) and save its checkpoint
-    # distill_main()  # train the student via knowledge distillation
+    main()
+    # distill_main()
