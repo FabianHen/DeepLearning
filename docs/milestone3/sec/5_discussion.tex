@@ -2,14 +2,14 @@
 \label{sec:diskussion}
  
 In diesem Abschnitt werden die Ergebnisse der Knowledge Distillation in den Kontext der beiden vorangegangenen
-Meilensteine eingeordnet, die auf demselben Datensatz durchgeführt wurden. In Meilenstein~1 wurden zehn selbst
+Meilensteine eingeordnet, die auf demselben Datensatz durchgeführt wurden. In Meilenstein~1 \cite{steidlehenssler2026milestone1} wurden zehn selbst
 entworfene CNN-Architekturen von Grund auf trainiert, in Meilenstein~2 wurden vortrainierte ResNet-Modelle
 (ResNet-18 bis ResNet-152) mittels Transfer Learning angepasst. Das beste Modell aus Meilenstein~2 diente anschließend
 als Teacher für die in dieser Arbeit untersuchte Distillation. Abschließend werden die bereits in
 Abschnitt~\ref{sec:quantitative_ergebnisse} beobachteten Effekte der Hyperparameter $\alpha$ und $T$ vertiefend
 analysiert.
  
-\subsection{Vergleich mit den Architekturen aus Meilenstein~1}
+\subsection{Vergleich mit Meilenstein~1}
 \label{sec:diskussion_m1}
  
 Besonders aufschlussreich ist der Vergleich mit Meilenstein~1, da die dort untersuchten Architekturen hinsichtlich der
@@ -34,7 +34,7 @@ Kapazität der Netze selbst begründet liegt, sondern in der Qualität des Train
 des Teachers stellen dem Student-Netz zusätzliche Information über die Ähnlichkeitsstruktur der Klassen bereit, die aus
 den harten Labels allein nicht hervorgeht.
  
-\subsection{Vergleich mit den Transfer-Learning-Modellen aus Meilenstein~2}
+\subsection{Vergleich mit Meilenstein~2}
 \label{sec:diskussion_m2}
  
 Die mittels Transfer Learning angepassten ResNet-Modelle aus Meilenstein~2 markieren die obere Leistungsgrenze in dieser
