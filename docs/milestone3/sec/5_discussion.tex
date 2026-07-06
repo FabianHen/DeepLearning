@@ -1,62 +1,79 @@
 \section{Diskussion}
 \label{sec:diskussion}
-
-In diesem Abschnitt werten wir die in Kapitel 3 präsentierten Ergebnisse aus
-und diskutieren die Implikationen für Architekturwahl, Regularisierung und
-Datensatzcharakteristika.
-
-\subsection{Architekturvergleich}
-Die vergleichende Betrachtung der zehn getesteten Modelle erlaubt Rückschlüsse
-auf die Wirkung spezifischer Designentscheidungen. Besonders deutlich wird dies
-in der in Anhang Abbildung \ref{fig:val_accuracy_all_nets} gezeigten Trennung
-zwischen Netzen mit BatchNorm und Netzen ohne BatchNorm: Die BatchNorm-Modelle
-erreichen konsistent höhere Validierungs-Accuracies, während die Modelle ohne
-BatchNorm früher stagnieren und auf einem niedrigeren Niveau verbleiben.
-
-Überanpassung (Overfitting) wurde in den vorliegenden Läufen kaum beobachtet;
-Trainings- und Validierungsverläufe zeigen keine ausgeprägte Divergenz.
-
-Entscheidend sind insbesondere:
-\begin{itemize}
-      \item Repräsentationskapazität: Modelle mit größerer Tiefe und mehr
-            Feature-Maps (z. B. \emph{BatchNorm\_Dense\_Pool\_Conv\_Net}) erreichen die
-            höchsten Validierungs- und Test-Accuracy-Werte, wobei die Kurven teils sprunghafter
-            verlaufen als beim Basismodell.
-      \item Ergänzend wurde eine Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net}
-            implementiert, in der die Anzahl der Feature-Maps erhöht wurde. Diese Variante
-            erfordert zusätzliche Layer sowie deutlich mehr Rechenzeit und Speicher;
-            die Ergebnisse zeigen dabei keine relevante Verbesserung der Accuracy,
-            weshalb der Mehraufwand gegenüber den Kosten nicht als gerechtfertigt
-            eingeschätzt wird.
-      \item Pooling-Strategien: Architekturen, die aggressives Pooling einsetzen,
-            reduzieren räumliche Auflösung und können feingranulare Klassentrennung (z. B.
-            kleine Objekte auf Luftbildern) erschweren.
-      \item Normalisierung und Dropout: Batch-Normalisierung stabilisiert die
-            Gradientenverteilung und ermöglicht höhere Lernraten; Dropout hilft gegen
-            Überanpassung, wirkt sich jedoch unterschiedlich stark auf verschiedene
-            Architekturen aus.
-\end{itemize}
-
-\subsection{Fehleranalyse und Klassen-spezifische Probleme}
-Die im Anhang gezeigten Konfusionsmatrizen \ref{fig:best_confusion} und
-\ref{fig:worst_confusion} machen den Unterschied zwischen dem besten und dem
-schlechtesten Modell klar sichtbar. Die schlechteste Matrix ist deutlich
-unsicherer und verteilt Fehlklassifikationen breiter, während die beste Matrix
-nahezu diagonal ist. Die verbleibenden Fehler beim besten Modell konzentrieren
-sich auf Klassen, die visuell ohnehin stark ähnlich sind, insbesondere
-\emph{ferry\_terminal} und \emph{harbor}, \emph{overpass} und \emph{intersection}
-sowie \emph{sparse\_residential} und \emph{dense\_residential}.
-
-Häufige Ursachen sind daher visuelle Ähnlichkeit, unterschiedliche Skalen im
-Bildausschnitt und unzureichende Variabilität in den Trainingsbeispielen.
-Für sehr ähnliche oder sehr kleine Klassen empfiehlt sich eine gezielte
-Aufstockung der Augmentation oder eine gewichtete Verlustfunktion.
-
-\subsection{Limitationen}
-Die Ergebnisse sind durch die begrenzte, aber weiterhin balancierte
-Stichprobe des PatternNet-Datensatzes eingeschränkt. Die verwendete
-geometrische Augmentation erhöht zwar die Varianz der Trainingsdaten, ersetzt
-aber keine gezielte Behandlung stark skalierungsabhängiger oder sehr kleiner
-Objekte. Unsere Experimente zielten auf einen fairen Architekturvergleich
-unter identischen Trainingsbedingungen; umfassende Hyperparameter-Tests
-wurden nicht durchgeführt und sind nicht Bestandteil dieser Auswertung.
+ 
+In diesem Abschnitt werden die Ergebnisse der Knowledge Distillation in den Kontext der beiden vorangegangenen
+Meilensteine eingeordnet, die auf demselben Datensatz durchgeführt wurden. In Meilenstein~1 wurden zehn selbst
+entworfene CNN-Architekturen von Grund auf trainiert, in Meilenstein~2 wurden vortrainierte ResNet-Modelle
+(ResNet-18 bis ResNet-152) mittels Transfer Learning angepasst. Das beste Modell aus Meilenstein~2 diente anschließend
+als Teacher für die in dieser Arbeit untersuchte Distillation. Abschließend werden die bereits in
+Abschnitt~\ref{sec:quantitative_ergebnisse} beobachteten Effekte der Hyperparameter $\alpha$ und $T$ vertiefend
+analysiert.
+ 
+\subsection{Vergleich mit den Architekturen aus Meilenstein~1}
+\label{sec:diskussion_m1}
+ 
+Besonders aufschlussreich ist der Vergleich mit Meilenstein~1, da die dort untersuchten Architekturen hinsichtlich der
+Parameteranzahl in einer ähnlichen Größenordnung liegen wie das Student-Netz, jedoch durchweg tiefer sind, also über mehr
+Schichten verfügen (vgl. Tabelle~\ref{tab:architektur_uebersicht}). Der Vergleich erlaubt daher eine Einschätzung,
+inwieweit Knowledge Distillation den Nachteil einer geringeren Netztiefe kompensieren kann.
+ 
+Als direkteste Vergleichsgruppe eignen sich die Architekturen mit Batch-Normalisierung, da auch das Student-Netz diese
+Technik einsetzt. Das ohne Teacher trainierte Student-Netz erreicht mit einer Testgenauigkeit von 73{,}16\,\% ein
+Ergebnis, das unterhalb aller BatchNorm-Varianten aus Meilenstein~1 liegt: Bereits das einfache \textit{BatchNorm\_Net}
+erzielt 79{,}6\,\%, die beste Architektur \textit{BatchNorm\_Dense\_Pool\_Conv\_Net} sogar 84{,}2\,\%. Lediglich
+das \textit{BatchNorm\_Dense\_Pool\_Net} liegt mit 73{,}0\,\% auf demselben Niveau wie die Baseline. Dieser Rückstand
+ist plausibel auf die geringere Tiefe des Student-Netzes zurückzuführen, die dessen Repräsentationsfähigkeit einschränkt.
+ 
+Durch die Knowledge Distillation verschiebt sich dieses Bild deutlich: Das beste destillierte Modell
+($\alpha = 0{,}1$, $T = 4{,}0$) erreicht mit 82{,}11\,\% eine Testgenauigkeit, die nur noch rund 2~Prozentpunkte
+unter der besten Architektur aus Meilenstein~1 liegt und drei der fünf BatchNorm-Varianten übertrifft. Das flachere
+Student-Netz kommt mit Unterstützung des Teachers also nahezu an das Ergebnis heran, für das in Meilenstein~1 eine
+tiefere und aufwendig per Architektursuche optimierte Netzstruktur erforderlich war. Dies deutet darauf hin, dass ein
+wesentlicher Teil des Leistungsunterschieds zwischen flachen und tiefen Netzen dieser Größenordnung nicht in der
+Kapazität der Netze selbst begründet liegt, sondern in der Qualität des Trainingssignals: Die weichen Zielverteilungen
+des Teachers stellen dem Student-Netz zusätzliche Information über die Ähnlichkeitsstruktur der Klassen bereit, die aus
+den harten Labels allein nicht hervorgeht.
+ 
+\subsection{Vergleich mit den Transfer-Learning-Modellen aus Meilenstein~2}
+\label{sec:diskussion_m2}
+ 
+Die mittels Transfer Learning angepassten ResNet-Modelle aus Meilenstein~2 markieren die obere Leistungsgrenze in dieser
+Versuchsreihe: Alle fünf Varianten erreichen Validierungsgenauigkeiten zwischen 96{,}8\,\% und 98{,}9\,\%, wobei das
+ResNet-50 mit 98{,}95\,\% am besten abschneidet und daher als Teacher für die Distillation ausgewählt wurde. Auffällig
+ist, dass die Leistung innerhalb der ResNet-Familie kaum mit der Netztiefe skaliert was darauf hindeutet, dass die auf ImageNet
+vorgelernten Merkmale für den vorliegenden Datensatz bereits weitgehend ausreichen und die Aufgabe für diese Modellklasse nicht
+kapazitätslimitiert ist.
+ 
+Gegenüber dem Teacher verbleibt auch nach der Distillation eine erhebliche Lücke von rund 15~Prozentpunkten
+(82{,}11\,\% gegenüber 98{,}95\,\%). Das Student-Netz kann das Wissen des Teachers also nur teilweise übernehmen,
+was angesichts des großen Kapazitäts- und Tiefenunterschieds sowie des fehlenden Vortrainings zu erwarten war. Die
+Distillation ist somit kein Ersatz für Transfer Learning, wenn maximale Genauigkeit das Ziel ist. Sie schließt jedoch
+einen relevanten Teil der Lücke zwischen dem frei trainierten Student-Netz und dem Teacher: Von den ursprünglich rund
+26~Prozentpunkten Abstand zwischen Baseline und Teacher werden etwa 9~Prozentpunkte durch die Distillation
+zurückgewonnen. Für Einsatzszenarien mit beschränkten Ressourcen, etwa auf eingebetteten Systemen, stellt der destillierte Student
+daher einen attraktiven Kompromiss zwischen Genauigkeit und Modellgröße dar.
+ 
+\subsection{Einfluss der Hyperparameter}
+\label{sec:diskussion_hyperparameter}
+ 
+Die in Abschnitt~\ref{sec:quantitative_ergebnisse} dargestellten Ergebnisse zeigen, dass der Erfolg der Distillation
+empfindlich von der Wahl der Hyperparameter $\alpha$ und $T$ abhängt. Über die Konfigurationen hinweg schwankt die
+Testgenauigkeit um mehr als 10~Prozentpunkte (71{,}40\,\% bis 82{,}11\,\%), und zwei Kombinationen bleiben sogar
+hinter der Baseline ohne Teacher zurück. Eine ungünstige Parameterwahl kann den Nutzen der Distillation demnach nicht
+nur aufheben, sondern das Training aktiv verschlechtern.
+ 
+Bei der Temperatur deutet sich ein systematischer Effekt an: Zwei der drei Läufe mit $T = 2{,}0$ zählen zu den
+schwächsten Ergebnissen. Eine niedrige Temperatur lässt die weichen Zielverteilungen des Teachers gegen die harten
+Labels konvergieren, wodurch der zusätzliche Informationsgehalt über die Klassenähnlichkeiten weitgehend verloren
+geht -- der Student erhält dann im Wesentlichen ein redundantes, aber verrauschtes zweites Label-Signal. Die moderate
+Temperatur $T = 4{,}0$ erweist sich in Kombination mit $\alpha = 0{,}1$ als optimal, während $T = 6{,}0$ die
+Verteilungen bereits so stark glättet, dass die Ergebnisse wieder leicht abfallen.
+ 
+Beim Gewichtungsfaktor zeigt sich, dass die beste Leistung bei der kleinsten untersuchten Gewichtung des
+Hard-Label-Anteils ($\alpha = 0{,}1$) erzielt wird, das Signal des Teachers also stark dominieren sollte. Dies ist
+konsistent mit der hohen Qualität des Teachers: Bei einer Genauigkeit von annähernd 99\,\% sind dessen Vorhersagen
+fast immer korrekt und zugleich informativer als die harten Labels, sodass eine stärkere Gewichtung der
+Ground-Truth-Labels kaum zusätzlichen Nutzen stiftet. Ein streng monotoner Zusammenhang lässt sich allerdings weder
+für $\alpha$ noch für $T$ ableiten; die Wechselwirkung beider Parameter ist offensichtlich nichtlinear. Da jede
+Konfiguration nur zweimal trainiert wurde, ist zudem nicht auszuschließen, dass ein Teil der beobachteten Unterschiede
+auf die Zufallsinitialisierung zurückgeht.

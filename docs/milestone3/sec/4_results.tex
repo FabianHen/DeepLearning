@@ -2,60 +2,96 @@
 \label{sec:ergebnisse}
 
 \subsection{Experimentelles Setup}
-Die in Abschnitt \ref{sec:methode} beschriebenen Trainings- und
-Auswertungsbedingungen werden hier als bekannt vorausgesetzt. Im Folgenden
-konzentrieren wir uns auf die präsentierten Resultate, deren Einordnung und die
-relevanten Schlussfolgerungen für die Wahl von Architektur und Regularisierung.
+In diesem Kapitel werden die Ergebnisse der in Kapitel~\ref{sec:methode} beschriebenen 
+Experimente vorgestellt und analysiert. Untersucht wurde, inwiefern sich die Klassifikationsleistung
+eines kompakten Student-Netzes durch Knowledge Distillation von einem größeren Teacher-Modell verbessern 
+lässt. Als Vergleichsbasis dient das identische Student-Netz, das ohne Teacher ausschließlich mit den 
+Ground-Truth-Labels trainiert wurde. Die Bewertung erfolgt anhand der Test- und Validierungsgenauigkeit, 
+der Verlustverläufe während des Trainings sowie einer klassenweisen Analyse mittels Konfusionsmatrizen.
 
 \subsection{Quantitative Ergebnisse}
-Die zusammenfassende Übersicht aller Validierungs- und Test-Accuracies ist in
-Tabelle \ref{tab:results} im Anhang zu finden. Daraus ergibt sich klar ein
-Leistungsgefälle: Modelle mit Batch-Normalisierung erreichen durchgängig höhere
-Accuracy-Werte als vergleichbare Modelle ohne BatchNorm. Besonders hervorzuheben
-ist das Modell \emph{BatchNorm\_Dense\_Pool\_Conv\_Net}, das mit einer
-Validierungs-Accuracy von 85.8\% und einer Test-Accuracy von 84.2\% das beste
-Ergebnis erzielt. Das Basismodell \emph{Base\_Net} liegt demgegenüber bei
-57.9\% (Val) bzw. 59.6\% (Test).
-
-Abbildung \ref{fig:compare_best_base} vergleicht den Trainingsverlauf des
-besten Modells direkt mit dem \emph{Base\_Net}. Während das Basisnetz einen
-gleichmäßigeren, weniger schwankenden Verlauf zeigt, erzielt das BatchNorm-Netz
-ein deutlich höheres Leistungsniveau, geht aber mit stärkeren epochalen
-Schwankungen einher. Diese Differenz spricht dafür, dass BatchNorm die
-Optimierung beschleunigt und das erreichbare Endniveau anhebt, zugleich jedoch
-die Kurven etwas volatiler macht.
-
-In unseren Läufen war Overfitting allgemein wenig ausgeprägt: Trainings- und
-Validierungsverläufe divergierten nicht stark, was auf sinnvolle
-Regularisierung und die angewandten Augmentationsstrategien hindeutet.
-
+\label{sec:quantitative_ergebnisse}
+ 
+Tabelle~\ref{tab:distillation_ergebnisse} fasst die Ergebnisse aller Trainingsläufe zusammen. Insgesamt
+liegen die erzielten Testgenauigkeiten in einem Bereich von 71{,}40\,\% bis 82{,}11\,\% und damit auf einem
+grundsätzlich vergleichbaren Niveau. Innerhalb dieses Bereichs zeigen sich jedoch deutliche Unterschiede in
+Abhängigkeit von der Wahl der Hyperparameter $\alpha$ (Gewichtung zwischen Distillations- und Klassifikationsverlust)
+und $T$ (Temperatur der Softmax-Funktion).
+ 
+Besonders hervorzuheben ist die Konfiguration $\alpha = 0{,}1$ und $T = 4{,}0$: Mit einer Testgenauigkeit von
+82{,}11\,\% erzielt sie das mit Abstand beste Ergebnis aller Versuche. Gegenüber der Baseline von 73{,}16\,\% entspricht
+dies einer absoluten Verbesserung von rund 9~Prozentpunkten bzw. einer relativen Steigerung von etwa 12\,\%. Dieses
+Modell erreicht zudem mit 84{,}04\,\% die höchste Validierungsgenauigkeit und mit 0{,}671 den niedrigsten
+Validierungsverlust aller Läufe, was auf eine konsistent bessere Generalisierung und nicht lediglich auf einen zufälligen
+Ausreißer hindeutet.
+ 
+Die beobachtete Verbesserung stellt sich jedoch nicht in allen Konfigurationen ein. Zwei Kombinationen --
+$\alpha = 0{,}1$, $T = 2{,}0$ (71{,}40\,\%) sowie $\alpha = 0{,}3$, $T = 2{,}0$ (72{,}98\,\%) -- schneiden sogar
+schlechter ab als die Baseline. Auffällig ist, dass beide unterlegenen Läufe mit der niedrigsten untersuchten
+Temperatur $T = 2{,}0$ trainiert wurden, mit Ausnahme der Konfiguration $\alpha = 0{,}2$, $T = 2{,}0$, die mit
+78{,}95\,\% überdurchschnittlich abschneidet. Weitere Konfigurationen, etwa $\alpha = 0{,}3$ mit $T = 6{,}0$
+(74{,}39\,\%), liegen nur unwesentlich über der Baseline und weisen damit keine praktisch relevante Verbesserung auf.
+Ein streng monotoner Zusammenhang zwischen den Hyperparametern und der erzielten Genauigkeit lässt sich aus den Daten
+nicht ableiten; vielmehr deutet sich an, dass eine geringe Gewichtung des Hard-Label-Verlusts ($\alpha = 0{,}1$) in
+Kombination mit einer moderaten Temperatur ($T = 4{,}0$) das Wissen des Teachers am effektivsten überträgt.
+ 
+Hinsichtlich des Rechenaufwands ist festzuhalten, dass die Distillation die Trainingszeit von etwa 2{,}4~Minuten
+auf 6{,}6 bis 7{,}7~Minuten nahezu verdreifacht, da in jedem Trainingsschritt zusätzlich ein Forward-Pass durch das
+Teacher-Modell erforderlich ist. Da dieser Mehraufwand ausschließlich das Training betrifft und die Inferenzkosten des
+Student-Netzes unverändert bleiben, ist er für den angestrebten Einsatzzweck eines kompakten Modells unkritisch.
+ 
+Anzumerken ist außerdem, dass die absoluten Werte des Trainingsverlusts der destillierten Modelle
+(vgl. Abbildungen~\ref{fig:train_loss} und \ref{fig:val_loss}) nicht direkt mit dem der Baseline vergleichbar sind, da sich die Verlustfunktion
+der Distillation aus der gewichteten Summe von Kreuzentropie- und Kullback-Leibler-Term zusammensetzt und Letzterer
+mit $T^2$ skaliert. Die durchweg höheren Trainingsverluste bei größeren Temperaturen sind daher konstruktionsbedingt
+und kein Indiz für schlechtere Konvergenz. Die Validierungsverluste, die für alle Modelle einheitlich als Kreuzentropie
+berechnet werden, bestätigen hingegen die Rangfolge der Genauigkeiten.
+ 
 \subsection{Konfusionsmatrix und klassenweise Analyse}
-Die klassenweise Betrachtung der Fehlklassifikationen ergänzt die globalen
-Accuracy-Werte: Die Konfusionsmatrix des besten Modells [\ref{fig:best_confusion}] ist nahezu diagonal und
-zeigt nur noch wenige, konsistente Verwechslungen zwischen visuell ähnlichen
-Klassen. Typische Fehlerpaare sind \emph{ferry\_terminal} mit
-\emph{harbor}, \emph{overpass} mit \emph{intersection} sowie
-\emph{sparse\_residential} mit \emph{dense\_residential}. Die Konfusionsmatrix
-des schlechtesten Modells [\ref{fig:worst_confusion}] dagegen weist eine deutlich verwischtere Diagonale auf
-und verteilt Fehlklassifikationen breiter über das Raster.
-
-Aus dieser Analyse lässt sich ableiten, dass die verbleibenden Fehler größtenteils
-auf inhärente visuelle Ähnlichkeiten zwischen bestimmten Klassen zurückzuführen
-sind und weniger auf generelle Mängel der Trainingsprozedur.
-
+ 
+Für eine differenziertere Betrachtung werden die Konfusionsmatrizen des besten destillierten Modells 
+($\alpha = 0{,}1$, $T = 4{,}0$, Abbildung~\ref{fig:cm_distilled}) und der Baseline (Abbildung~\ref{fig:cm_baseline}) 
+gegenübergestellt. Grundsätzlich weisen die Matrizen aller Läufe ein ähnliches Muster auf: Die Stärken und Schwächen 
+konzentrieren sich auf dieselben Klassen und unterscheiden sich zwischen den Konfigurationen meist nur in Details.
+ 
+Visuell eindeutig unterscheidbare Klassen wie \textit{beach}, \textit{cemetery}, \textit{chaparral}, \textit{freeway},
+\textit{oil\_gas\_field}, \textit{oil\_well}, \textit{parking\_lot} und \textit{solar\_panel} werden von beiden Modellen
+nahezu fehlerfrei klassifiziert. Die systematischen Verwechslungen treten hingegen erwartungsgemäß zwischen semantisch
+und visuell verwandten Klassen auf. Hierzu zählen insbesondere:
+ 
+\begin{itemize}
+	\item \textit{sparse\_residential} und \textit{dense\_residential}, die sich primär in der Bebauungsdichte unterscheiden,
+	\item \textit{basketball\_court} und \textit{tennis\_court}, die als rechteckige Sportflächen eine sehr ähnliche Struktur aufweisen,
+	\item \textit{runway} und \textit{runway\_marking}, die denselben Bildinhalt in unterschiedlichem Maßstab zeigen,
+	\item Klassen mit Wasser- bzw. Hafenbezug wie \textit{ferry\_terminal}, \textit{harbor} und \textit{bridge}.
+\end{itemize}
+ 
+Der Vergleich der beiden Matrizen zeigt, dass die Distillation vor allem bei diesen schwierigen Klassen zu Verbesserungen
+führt. Besonders deutlich wird dies bei \textit{dense\_residential}: Während die Baseline hier lediglich 6 von 15
+Testbildern korrekt zuordnet und die übrigen überwiegend auf benachbarte Bebauungsklassen verteilt, klassifiziert das
+destillierte Modell alle 15 Bilder korrekt. Ähnliche Zugewinne zeigen sich bei \textit{nursing\_home}
+(10 statt 6 korrekte Zuordnungen), \textit{parking\_space} (13 statt 6) und \textit{crosswalk} (15 statt 11). Diese
+Beobachtung stützt die Hypothese, dass die weichen Wahrscheinlichkeitsverteilungen des Teachers gerade bei ähnlichen
+Klassen zusätzliche Information über deren Beziehungen zueinander liefern, die aus den harten Labels allein nicht
+hervorgeht.
+ 
+Vereinzelt verschlechtert sich die Erkennung einzelner Klassen durch die Distillation geringfügig, etwa bei
+\textit{storage\_tank} (11 statt 12 korrekte Zuordnungen) oder \textit{airplain}. In der Gesamtbilanz überwiegen 
+die Verbesserungen jedoch klar, was sich in der um rund 9~Prozentpunkte höheren Gesamtgenauigkeit widerspiegelt.
+ 
 \subsection{Interpretation und qualitative Beobachtungen}
-Die Ergebnisse lassen sich folgendermaßen zusammenfassen: Insgesamt deuten die
-Resultate darauf hin, dass Batch-Normalisierung die Modellleistung deutlich
-verbessert; das beste BatchNorm-Modell (\emph{BatchNorm\_Dense\_Pool\_Conv\_Net})
-erreicht 85.8\% (Val) bzw. 84.2\% (Test) und liegt damit weit über dem
-\emph{Base\_Net}. Komplexere Varianten wie
-\emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net} (80.0\% Val,
-77.2\% Test) zeigen hingegen keinen klaren zusätzlichen Nutzen im Verhältnis zu
-ihrem erhöhten Ressourcenbedarf.
-
-Dropout wirkt in unseren Experimenten primär als Varianz-Reduktor der Lernkurven
-und kann unter Umständen die Konvergenz verlangsamen; seine konkrete Wirkung ist
-aber architekturabhängig. Insgesamt legen die vorliegenden Kurven und
-Konfusionsmatrizen nahe, dass die Wahl von BatchNorm in Kombination mit einer
-ausreichenden, aber nicht übertriebenen Modellkomplexität den besten
-Trade-off zwischen Leistung und Aufwand liefert.
+ 
+Zusammenfassend lässt sich festhalten, dass die Wahl der Hyperparameter $\alpha$ und $T$ das Ergebnis der Knowledge
+Distillation maßgeblich beeinflusst. Nicht jede Kombination führt zu der erhofften Verbesserung: Zwei der neun
+untersuchten Konfigurationen blieben hinter der Baseline zurück, weitere erreichten lediglich ein vergleichbares Niveau.
+In der Mehrzahl der Fälle bewirkte die Distillation jedoch eine Steigerung der Testgenauigkeit in der Größenordnung von
+3 bis 5~Prozentpunkten; in der besten Konfiguration ($\alpha = 0{,}1$, $T = 4{,}0$) betrug der Zugewinn sogar
+rund 9~Prozentpunkte.
+ 
+Die Ergebnisse legen nahe, dass eine niedrige Gewichtung des Hard-Label-Anteils in Verbindung mit einer moderaten
+Temperatur am besten geeignet ist, das im Teacher enthaltene Wissen über die Ähnlichkeitsstruktur der Klassen auf das
+Student-Netz zu übertragen. Bei zu niedriger Temperatur nähern sich die weichen Zielverteilungen den harten Labels an,
+sodass der zusätzliche Informationsgehalt weitgehend verloren geht; dies bietet eine plausible Erklärung für das schwache
+Abschneiden mehrerer Läufe mit $T = 2{,}0$. Die klassenweise Analyse bestätigt darüber hinaus, dass der Nutzen der
+Distillation vor allem bei visuell schwer unterscheidbaren Klassen zum Tragen kommt, während bei ohnehin gut separierbaren
+Klassen kaum Spielraum für Verbesserungen besteht.

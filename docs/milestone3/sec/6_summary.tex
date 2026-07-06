@@ -1,27 +1,10 @@
 \section{Zusammenfassung}
 \label{sec:fazit}
 
-In dieser Arbeit wurden zehn verschiedene Netzarchitekturen auf dem
-PatternNet-Datensatz verglichen; die Experimente basierten dabei auf einer
-verkleinerten, aber weiterhin balancierten Teilmenge.
-Die Studie zeigt, dass architekturspezifische Entscheidungen (Tiefe,
-Feature-Map-Anzahl, Normalisierung und Regularisierung) einen signifikanten
-Einfluss auf Generalisierung und Stabilität des Trainings haben.
-Die eingesetzte Datenaugmentation erhöht die Robustheit
-gegenüber Lage- und Skalenvariationen und trägt zur Reduktion spezifischer
-Verwechslungen bei. Die Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net},
-in der zusätzliche Layer und eine erhöhte Feature-Map-Anzahl verwendet wurden,
-erforderte deutlich längere Trainingszeiten; die finale Bewertung ergab jedoch
-keine relevante Verbesserung der Accuracy. Die Confusion-Matrizen zeigen, dass
-die meisten Fehler auf visuell ähnliche Klassen zurückzuführen sind und nicht auf
-ein systematisches globales Verwechslungsmuster.
-
-Wesentliche Erkenntnisse:
-\begin{itemize}
-      \item Das beste Modell war \emph{BatchNorm\_Dense\_Pool\_Conv\_Net} (85.8\% Val, 84.2\% Test).
-      \item Die komplexere Variante \emph{BatchNorm\_Dense\_Pool\_Conv\_Dropout\_V2\_Net} erforderte
-            deutlich längere Trainingszeiten, brachte aber keine relevante Verbesserung der Accuracy.
-      \item Die eingesetzte Datenaugmentation erhöht die Robustheit gegenüber Lage- und Skalenvariationen.
-      \item Die Confusion-Matrizen zeigen, dass die verbleibenden Fehler überwiegend auf visuell
-            ähnliche Klassen zurückzuführen sind.
-\end{itemize}
+Über die drei Meilensteine hinweg ergibt sich ein konsistentes Gesamtbild: Transfer Learning mit vortrainierten
+ResNets liefert auf dem untersuchten Datensatz die mit Abstand höchste Genauigkeit ($\approx 99\,\%$), erfordert
+jedoch große Modelle. Selbst entworfene tiefe CNNs erreichen nach sorgfältiger Architektursuche bis zu 84{,}2\,\%.
+Knowledge Distillation ermöglicht es einem bewusst kompakten und flachen Student-Netz, mit 82{,}11\,\% nahezu zu
+diesen aufwendig optimierten Architekturen aufzuschließen und seine eigene Baseline um rund 9~Prozentpunkte zu
+übertreffen. Dies erfordert jedoch eine sorgfältige Hyperparameterwahl. Die Methode ist damit insbesondere dann
+attraktiv, wenn ein starker Teacher bereits vorhanden ist und die Modellgröße durch die Zielplattform beschränkt wird.
