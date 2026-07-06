@@ -1,14 +1,12 @@
 \section{Eigene Methoden}
 \label{sec:methode}
 
-% --- 2.1 Datensatz ---
 \subsection{Datensatz}
 \label{subsec:datensatz}
 
 Grundlage der Experimente ist derselbe PatternNet-Datensatz wie in der ersten Arbeit~\cite{steidlehenssler2026milestone1}.
 Für die hier untersuchten Distillation-Experimente wurde die Stichprobe wie zuvor auf 100 Bilder pro Klasse begrenzt, damit die Ergebnisse direkt vergleichbar bleiben.
 
-% --- 2.2 Vorverarbeitung und Augmentation ---
 \subsection{Vorverarbeitung und Datenaugmentation}
 \label{subsec:augmentation}
 
@@ -25,6 +23,7 @@ Damit bleibt der Student deutlich kleiner als der Teacher, erhält aber eine sta
 
 Beide Netze geben vor der Softmax-Aktivierung Logits aus.
 Diese Logits sind die Grundlage für die Distillation, da nicht nur die harten Klassenlabels, sondern auch die weichen Vorhersagen des Teachers in die Optimierung einfließen.
+Das grundlegende Prinzip der Knowledge Distillation folgt dabei der Arbeit von Hinton et al.~\cite{hinton2015distilling}.
 
 \subsection{Knowledge Distillation}
 \label{subsec:distillation}
@@ -32,16 +31,16 @@ Diese Logits sind die Grundlage für die Distillation, da nicht nur die harten K
 Seien $z_s$ die Logits des Student-Modells und $z_t$ die Logits des Teacher-Modells.
 Aus diesen Werten werden temperaturgeskalierte Verteilungen berechnet:
 \begin{equation}
-    p_s^{(T)} = \operatorname{softmax}\left(\frac{z_s}{T}\right),
-    \qquad
-    p_t^{(T)} = \operatorname{softmax}\left(\frac{z_t}{T}\right).
+  p_s^{(T)} = \operatorname{softmax}\left(\frac{z_s}{T}\right),
+  \qquad
+  p_t^{(T)} = \operatorname{softmax}\left(\frac{z_t}{T}\right).
 \end{equation}
 Die Temperatur $T$ steuert die Weichheit der Verteilungen. Höhere Temperaturen glätten die Wahrscheinlichkeiten und machen Nebenklassen sichtbarer, während kleinere Temperaturen die Verteilungen schärfer machen.
 
 Die verwendete Distillation-Loss kombiniert den Kreuzentropie-Term mit einer KL-Divergenz zwischen Teacher- und Student-Verteilungen:
 \begin{equation}
-    \mathcal{L}_{\mathrm{KD}} = \alpha \, \mathcal{L}_{\mathrm{CE}}(y, z_s)
-    + (1-\alpha) \, T^2 \, \mathcal{L}_{\mathrm{KL}}\left(p_t^{(T)}, p_s^{(T)}\right).
+  \mathcal{L}_{\mathrm{KD}} = \alpha \, \mathcal{L}_{\mathrm{CE}}(y, z_s)
+  + (1-\alpha) \, T^2 \, \mathcal{L}_{\mathrm{KL}}\left(p_t^{(T)}, p_s^{(T)}\right).
 \end{equation}
 Dabei ist $y$ das Ground-Truth-Label, $\mathcal{L}_{\mathrm{CE}}$ der Kreuzentropie-Term und $\mathcal{L}_{\mathrm{KL}}$ die Kullback-Leibler-Divergenz zwischen den temperaturgeskalierten Verteilungen.
 Der Faktor $T^2$ kompensiert dabei den Skalierungseffekt der Temperatur auf die Gradienten und hält den Beitrag des Distillation-Terms in einem vergleichbaren numerischen Bereich.
@@ -51,31 +50,29 @@ Der Parameter $\alpha$ gewichtet das Verhältnis zwischen den harten Labels und 
 \label{subsec:training}
 
 Alle Läufe wurden unter identischen Bedingungen trainiert, um die verschiedenen Distillationseinstellungen direkt vergleichen zu können.
-Als Optimizer wurde Adam mit den Standardparametern der PyTorch-Implementierung verwendet ($\eta = 10^{-3}$, $\beta_1 = 0.9$, $\beta_2 = 0.999$).
+Als Optimizer wurde Adam mit den Standardparametern der PyTorch-Implementierung verwendet ($\eta = 10^{-3}$; $\beta_1 = 0{,}9$; $\beta_2 = 0{,}999$).
 Ein Learning-Rate-Scheduler wurde nicht eingesetzt, sodass die Lernrate über alle Epochen konstant blieb.
 
 Das Training erfolgte über 15~Epochen mit einer Batchgröße von 64.
-Für die Distillation wurden die Temperaturen $T \in \{2, 4, 6\}$ und die $\alpha$-Werte $\alpha \in \{0.1, 0.2, 0.3\}$ untersucht.
+Für die Distillation wurden die Temperaturen $T \in \{2; 4; 6\}$ und die $\alpha$-Werte $\alpha \in \{{,}1; {,}2; {,}3\}$ untersucht.
 Damit ergaben sich insgesamt neun Durchläufe, in denen jede Temperatur mit jedem Alpha-Wert kombiniert wurde.
 
 Die Bewertung erfolgte primär über die Test-Accuracy.
 Zusätzlich wurden nach jeder Epoche die Validierungs-Accuracy und der Validierungs-Loss berechnet und mit TensorBoard protokolliert.
 Auch die Konfusionsmatrix wurde auf der Validierungsmenge pro Epoche erstellt, um klassenspezifische Fehlklassifikationen sichtbar zu machen.
 
-% --- 2.5 Implementierungsdetails ---
 \subsection{Implementierungsdetails}
 \label{subsec:implementierung}
 
 Die technischen Details zur Dataset-Klasse, zur Stratifizierung, zur DataLoader-Konfiguration sowie zum Logging entsprechen ebenfalls weitgehend der ersten Arbeit~\cite{steidlehenssler2026milestone1}.
 Für die hier untersuchten Distillation-Läufe wurden diese Bestandteile nicht neu konzipiert, sondern als gemeinsame Infrastruktur übernommen, damit der Effekt von Teacher, Student sowie Temperatur und $\alpha$ isoliert untersucht werden kann.
 
-% --- 2.6 Evaluationsmetrik ---
 \subsection{Evaluationsmetrik}
 \label{subsec:evaluation}
 
 Zur Bewertung der Klassifikationsleistung wird die \textit{Accuracy} (Genauigkeit) herangezogen, definiert als der Anteil korrekt klassifizierter Bilder an der Gesamtzahl der Testbilder:
 \begin{equation}
-    \text{Accuracy} = \frac{\text{Anzahl korrekt klassifizierter Bilder}}{\text{Gesamtzahl der Testbilder}}
+  \text{Accuracy} = \frac{\text{Anzahl korrekt klassifizierter Bilder}}{\text{Gesamtzahl der Testbilder}}
 \end{equation}
 
 Da der PatternNet-Datensatz gleichverteilte Klassen aufweist, ist die Accuracy eine aussagekräftige Metrik, die nicht durch Klassenungleichgewichte verzerrt wird.
